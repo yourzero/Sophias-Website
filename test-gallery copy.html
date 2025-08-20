@@ -1,0 +1,379 @@
+<html>
+    <body>
+    <embed>
+
+
+
+
+
+
+
+<!-- Optional: DATA-DRIVEN MODE
+     If you prefer editing one JSON list instead of multiple figure elements,
+     fill this JSON and REMOVE the manual <figure> blocks above. The script
+     will render the cards for you. Leave it as-is to ignore. -->
+<script id="pf-data" type="application/json">
+{
+    "baseUrl": "https://picsum.photos/id/",
+  "items": [
+    {
+      "src": "1025/600/400",
+      "alt": "Headshot fully shaded example",
+      "title": "Headshot – Fully Shaded",
+      "caption": "Commission: OC headshot",
+      "tags": ["headshot", "fully shaded", "anime"]
+    },
+    {
+      "src": "1069/600/400",
+      "alt": "Bust flat color example",
+      "title": "Bust – Flat Color",
+      "caption": "Sample bust piece",
+      "tags": ["bust", "flat color", "anime"]
+    },
+    {
+      "src": "1040/600/400",
+      "alt": "Full body with background example",
+      "title": "Full Body with Background",
+      "caption": "Full body + BG",
+      "tags": ["full body", "fully shaded", "background", "anime"]
+    },
+    {
+      "src": "237/600/400",
+      "alt": "Chibi flat color example",
+      "title": "Chibi – Flat Color",
+      "caption": "Cute chibi style",
+      "tags": ["chibi", "flat color"]
+    },
+    {
+      "src": "https://sophie-gallery-test.carrd.co/assets/images/image01.jpg",
+      "alt": "Interstellar",
+      "title": "Interstellar",
+      "caption": "Black Hole",
+      "tags": ["black hole", "space", "interstellar", "best movie ever made"]
+    }
+
+  ]
+}
+</script>
+
+
+
+
+
+<!-- ===== Portfolio: Filters + Search + Deep-linking + Modal (Carrd embed) - SCRIPT ONLY ===== -->
+<div id="gallery" class="pf-wrap">
+  <!-- Controls -->
+  <div class="pf-controls" aria-label="Filters and search">
+    <div class="pf-tags" id="pf-tags"></div>
+    <label class="pf-search">
+      <span>Search</span>
+      <input id="pf-search" type="search" placeholder="Search titles, captions, tags…" autocomplete="off" />
+    </label>
+    <button id="pf-clear" class="pf-clear" type="button" aria-label="Clear filters">Clear</button>
+    <div class="pf-count" id="pf-count" aria-live="polite"></div>
+  </div>
+
+  <!-- Grid (render target) -->
+  <div class="pf-grid" id="pf-grid"></div>
+
+  <!-- Optional JSON error outlet -->
+  <div id="pf-error" class="pf-error" aria-live="assertive" hidden></div>
+</div>
+
+<!-- Modal overlay -->
+<div class="pf-modal" id="pf-modal" aria-hidden="true" role="dialog" aria-label="Image preview">
+  <div class="inner">
+    <div class="bar">
+      <div class="title" id="pf-modal-title"></div>
+      <button class="close" id="pf-modal-close" aria-label="Close">×</button>
+    </div>
+    <img id="pf-modal-img" alt="">
+    <div class="cap" id="pf-modal-cap"></div>
+  </div>
+</div>
+
+<style>
+/* Vars & layout */
+.pf-wrap { --gap: 1rem; --fg:#111; --muted:#666; --line:#e7e7e7; --chip:#f7f7f7; }
+.pf-controls { display:flex; flex-wrap:wrap; gap: var(--gap); align-items:center; margin: 1rem 0 1.25rem; }
+.pf-tags { display:flex; flex-wrap:wrap; gap:.5rem; }
+.pf-error { margin:.5rem 0; padding:.6rem .8rem; border-radius:8px; background:#fff3cd; color:#7a5a00; border:1px solid #ffe69c; }
+
+/* Filter chips → light tag-cloud buttons */
+.pf-chip {
+  display:inline-flex; align-items:center;
+  padding:.3rem .65rem; border-radius:12px;
+  font-size:.85rem; font-weight:400;
+  background:#fafafa; color:var(--muted);
+  border:1px solid #e0e0e0; cursor:pointer; user-select:none;
+  transition:background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.pf-chip:hover { background:#f0f0f0; color:#333; box-shadow:0 2px 6px rgba(0,0,0,.05); }
+.pf-chip input { display:none; }
+.pf-chip.active { background:#111; color:#fff; border-color:#111; box-shadow:0 2px 8px rgba(0,0,0,.15); }
+
+/* Search & buttons */
+.pf-search { display:flex; align-items:center; gap:.4rem; border:1px solid var(--line); padding:.35rem .6rem; border-radius:8px; }
+.pf-search input { border:0; outline:0; min-width:14rem; background:transparent; }
+.pf-clear { border:1px solid var(--line); background:#fff; padding:.35rem .7rem; border-radius:8px; cursor:pointer; }
+.pf-count { color:var(--muted); margin-left:auto; }
+
+/* Grid & cards */
+.pf-grid { display:grid; grid-template-columns: repeat( auto-fit, minmax(220px, 1fr) ); gap: var(--gap); }
+.pf-item {
+  border:1px solid rgba(0,0,0,.06);
+  border-radius:14px; overflow:hidden; background:#fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.06);
+  position: relative; z-index: 0;
+  transform-origin: center center;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.pf-item:hover { transform: scale(2) translateZ(0); z-index: 5; } /* “medium” hover growth */
+.pf-item img { width:100%; height:auto; display:block; }
+
+/* Figcaption + in-card tag cloud (lighter than title) */
+.pf-item figcaption { padding:.6rem .75rem; color:var(--muted); }
+.pf-item figcaption strong { display:block; color:#222; margin-bottom:.35rem; }
+.pf-card-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
+.pf-card-tag {
+  background:#f5f5f5; color:#555; border-radius:12px;
+  padding:.15rem .55rem; line-height:1.3; font-size:.75rem; white-space:nowrap;
+  border:1px solid #e6e6e6;
+}
+
+/* Utilities */
+.pf-hide { display:none !important; }
+
+/* Modal */
+.pf-modal {
+  position: fixed; inset: 0; display: none;
+  background: rgba(0,0,0,.65);
+  align-items: center; justify-content: center;
+  padding: 2rem; z-index: 9999;
+}
+.pf-modal.is-open { display: flex; }
+.pf-modal .inner {
+  background: #111; border-radius: 16px; overflow: hidden;
+  max-width: min(92vw, 1200px); max-height: 88vh;
+  box-shadow: 0 18px 48px rgba(0,0,0,.35);
+  transform: scale(.96); opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.pf-modal.is-open .inner { transform: scale(1); opacity: 1; }
+.pf-modal img { display:block; width: 100%; height: auto; object-fit: contain; background:#000; }
+.pf-modal .bar { display:flex; align-items:center; justify-content:space-between; padding:.6rem .8rem; color:#eee; background:#000; }
+.pf-modal .title { font-weight:600; font-size:.95rem; }
+.pf-modal .close { appearance:none; border:0; background:transparent; color:#fff; font-size:1.25rem; cursor:pointer; padding:.25rem .4rem; }
+.pf-modal .cap { padding:.6rem .8rem; color:#cfcfcf; background:#0a0a0a; font-size:.9rem; }
+
+/* Lock background scroll when modal open */
+body.pf-lock { overflow: hidden; }
+
+/* Reduce hover scale on small screens */
+@media (max-width: 640px) {
+  .pf-item:hover { transform: scale(1.25); }
+}
+</style>
+
+<script>
+(() => {
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+  const byText = (t) => (t||"").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g,"");
+
+  const grid = $("#pf-grid");
+  const tagsWrap = $("#pf-tags");
+  const searchInput = $("#pf-search");
+  const clearBtn = $("#pf-clear");
+  const countEl = $("#pf-count");
+  const errEl = $("#pf-error");
+
+  // Read JSON from separate embed (#pf-data)
+  function readData() {
+    const dataScript = $("#pf-data");
+    if (!dataScript) return { items: [] };
+    try {
+      const data = JSON.parse(dataScript.textContent || "{}");
+      if (!Array.isArray(data.items)) return { baseUrl: data.baseUrl || "", items: [] };
+      return { baseUrl: data.baseUrl || "", items: data.items };
+    } catch (e) {
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = "⚠️ Gallery Data is not valid JSON. Check commas and quotes.";
+      }
+      console.warn("pf-data JSON parse error:", e);
+      return { items: [] };
+    }
+  }
+
+  // Render items from JSON into the grid
+  function renderFromData(data) {
+    if (!data.items.length) return;
+    const base = data.baseUrl || "";
+    grid.innerHTML = data.items.map(item => {
+      const src = (item.src || "").startsWith("http") ? item.src : (base + (item.src || ""));
+      const alt = item.alt || "";
+      const title = item.title || "";
+      const caption = item.caption || "";
+      const tags = Array.isArray(item.tags) ? item.tags : [];
+      const dataTags = tags.join(", ");
+
+      return `
+        <figure class="pf-item"
+                data-tags="${dataTags}"
+                data-title="${title.replace(/"/g,'&quot;')}"
+                data-caption="${caption.replace(/"/g,'&quot;')}">
+          <img src="${src}" alt="${alt.replace(/"/g,'&quot;')}"/>
+          <figcaption>
+            <strong>${title}</strong>
+            <small class="pf-card-tags"></small>
+          </figcaption>
+        </figure>
+      `;
+    }).join("");
+  }
+
+  // Build item model from DOM
+  const parseTags = (el) => (el.getAttribute("data-tags")||"")
+    .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+
+  // URL params: #gallery?tags=a,b&q=text
+  function getParamsFromHash() {
+    const h = location.hash || "";
+    const qIndex = h.indexOf("?");
+    const params = new URLSearchParams(qIndex >= 0 ? h.slice(qIndex+1) : "");
+    return params;
+  }
+
+  function setFromParams() {
+    const p = getParamsFromHash();
+    const want = (p.get("tags")||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
+    $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
+      cb.checked = want.includes(cb.value);
+      cb.closest('.pf-chip')?.classList.toggle('active', cb.checked);
+    });
+    searchInput.value = p.get("q") || "";
+  }
+
+  function updateHash(active, q) {
+    const params = new URLSearchParams();
+    if (active.length) params.set("tags", active.join(","));
+    if (q) params.set("q", q);
+    const base = location.href.split("#")[0];
+    const hash = "gallery" + (params.toString() ? "?" + params.toString() : "");
+    history.replaceState(null, "", base + "#" + hash);
+  }
+
+  // Init render
+  const data = readData();
+  renderFromData(data);
+
+  // Collect items & auto-render in-card tag cloud
+  const items = $$(".pf-item", grid).map(el => ({
+    el,
+    title: byText(el.getAttribute("data-title")),
+    caption: byText(el.getAttribute("data-caption")),
+    tags: parseTags(el)
+  }));
+  items.forEach(i => {
+    const box = i.el.querySelector(".pf-card-tags");
+    if (box && i.tags.length) {
+      box.innerHTML = i.tags.map(t => `<span class="pf-card-tag">${t}</span>`).join("");
+    }
+  });
+
+  // Build unique tag list for filter chips
+  const allTags = Array.from(new Set(items.flatMap(i => i.tags))).sort((a,b)=>a.localeCompare(b));
+  allTags.forEach(tag => {
+    const id = `tg-${tag.replace(/\s+/g,'-')}`;
+    const chip = document.createElement("label");
+    chip.className = "pf-chip";
+    chip.innerHTML = `<input type="checkbox" value="${tag}" id="${id}" aria-label="${tag}"><span>${tag}</span>`;
+    tagsWrap.appendChild(chip);
+  });
+
+  function applyFilters(pushState=false) {
+    const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
+    const q = byText(searchInput.value);
+    let visible = 0;
+
+    items.forEach(i => {
+      const matchTags = active.every(tag => i.tags.includes(tag));
+      const matchText = !q || i.title.includes(q) || i.caption.includes(q) || i.tags.join(" ").includes(q);
+      const show = matchTags && matchText;
+      i.el.classList.toggle("pf-hide", !show);
+      if (show) visible++;
+    });
+
+    countEl.textContent = visible + " result" + (visible===1?"":"s");
+    if (pushState) updateHash(active, searchInput.value);
+  }
+
+  // Wire controls
+  tagsWrap.addEventListener("change", (e) => {
+    const cb = e.target.closest('input[type=checkbox]');
+    if (cb) cb.closest('.pf-chip')?.classList.toggle('active', cb.checked);
+    applyFilters(true);
+  });
+  searchInput.addEventListener("input", () => applyFilters(true));
+  clearBtn.addEventListener("click", () => {
+    $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
+      cb.checked = false;
+      cb.closest('.pf-chip')?.classList.remove('active');
+    });
+    searchInput.value = "";
+    applyFilters(true);
+  });
+
+  // Init & hash handling
+  setFromParams();
+  applyFilters(false);
+  window.addEventListener("hashchange", () => {
+    if ((location.hash||"").startsWith("#gallery")) {
+      setFromParams();
+      applyFilters(false);
+    }
+  });
+
+  // Modal logic
+  const modal = $("#pf-modal");
+  const mImg = $("#pf-modal-img");
+  const mTitle = $("#pf-modal-title");
+  const mCap = $("#pf-modal-cap");
+  const mClose = $("#pf-modal-close");
+
+  function openModal(fromItem) {
+    const img = fromItem.querySelector("img");
+    mImg.src = img.src;
+    mImg.alt = img.alt || "";
+    mTitle.textContent = fromItem.getAttribute("data-title") || "";
+    mCap.textContent = fromItem.getAttribute("data-caption") || "";
+    modal.classList.add("is-open");
+    document.body.classList.add("pf-lock");
+    modal.setAttribute("aria-hidden","false");
+  }
+  function closeModal() {
+    modal.classList.remove("is-open");
+    document.body.classList.remove("pf-lock");
+    modal.setAttribute("aria-hidden","true");
+  }
+
+  grid.addEventListener("click", (e) => {
+    const card = e.target.closest(".pf-item");
+    if (card) openModal(card);
+  });
+  mClose.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  window.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal(); });
+})();
+</script>
+<!-- ===== /Gallery Script (expects separate #pf-data JSON embed) ===== -->
+
+
+
+
+
+</embed>
+
+</body>
+</html>

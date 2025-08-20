@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Test Gallery (Option 2)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* Make the embed fill the page nicely */
+    html, body { height: 100%; margin: 0; }
+    .wrap { height: 100%; display: grid; place-items: center; background: #fafafa; }
+    .frame {
+      width: min(1200px, 96vw);
+      height: 90vh;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+    .note {
+      position: fixed; bottom: 10px; left: 12px; right: 12px;
+      color: #666; font: 13px/1.4 system-ui, sans-serif;
+      text-align: center;
+    }
+    .note code { background: #f2f2f2; padding: .1rem .3rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- You only need to load the PLUGIN document -->
+    <!-- The plugin will fetch('gallery-configuration.html') and parse #pf-data -->
+    <embed class="frame" src="gallery-plugin.html" type="text/html" />
+  </div>
+
+  <div class="note">
+    Tip: run a local server (e.g. <code>python -m http.server</code>) and open
+    <code>http://localhost:8000/test-gallery.html</code> so <code>fetch()</code> can load
+    <code>gallery-configuration.html</code>.
+  </div>
+</body>
+</html>
