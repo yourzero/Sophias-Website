@@ -2,7 +2,6 @@
   const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
   const byText = (t) => (t||"").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g,"");
-  const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const grid = $("#pf-grid");
   const tagsWrap = $("#pf-tags");
@@ -15,6 +14,42 @@
   const mTitle = $("#pf-modal-title");
   const mCap = $("#pf-modal-cap");
   const mClose = $("#pf-modal-close");
+
+  const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let __pf_animating = false;
+  let __pf_lastThumb = null;
+
+  function flyBetweenRects(imgSrc, fromRect, toRect, onDone) {
+    if (prefersReduced) { onDone && onDone(); return; }
+    __pf_animating = true;
+    const ghost = document.createElement("img");
+    ghost.src = imgSrc; ghost.alt = "";
+    Object.assign(ghost.style, {
+      position: "fixed",
+      left: fromRect.left + "px",
+      top: fromRect.top + "px",
+      width: fromRect.width + "px",
+      height: fromRect.height + "px",
+      borderRadius: "8px",
+      zIndex: "99999",
+      pointerEvents: "none",
+      transition: "transform .34s cubic-bezier(.2,.7,.2,1), opacity .34s ease"
+    });
+    document.body.appendChild(ghost);
+    const dx = (toRect.left + toRect.width/2) - (fromRect.left + fromRect.width/2);
+    const dy = (toRect.top + toRect.height/2) - (fromRect.top + fromRect.height/2);
+    const sx = toRect.width / fromRect.width;
+    const sy = toRect.height / fromRect.height;
+    const scale = Math.min(sx, sy);
+    requestAnimationFrame(() => {
+      ghost.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
+    });
+    ghost.addEventListener("transitionend", () => {
+      ghost.remove();
+      __pf_animating = false;
+      onDone && onDone();
+    }, { once: true });
+  }
 
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
@@ -55,80 +90,65 @@
     }).join("");
   }
 
-  function fly(fromRect, toRect, imgSrc, reverse, done) {
-    if (!done) done = () => {};
-    if (prefersReduced) { done(); return; }
-    const ghost = document.createElement("img");
-    ghost.src = imgSrc; ghost.alt = "";
-    Object.assign(ghost.style, {
-      position: "fixed",
-      left: fromRect.left + "px",
-      top: fromRect.top + "px",
-      width: fromRect.width + "px",
-      height: fromRect.height + "px",
-      borderRadius: "12px",
-      zIndex: "9999",
-      pointerEvents: "none",
-      transition: "transform .32s cubic-bezier(.2,.7,.2,1), opacity .32s ease",
-      transformOrigin: "center center",
-      willChange: "transform, opacity"
-    });
-    document.body.appendChild(ghost);
-    const dx = (toRect.left + toRect.width/2) - (fromRect.left + fromRect.width/2);
-    const dy = (toRect.top + toRect.height/2) - (fromRect.top + fromRect.height/2);
-    const sx = toRect.width / fromRect.width;
-    const sy = toRect.height / fromRect.height;
-    const scale = Math.min(sx, sy);
-    requestAnimationFrame(() => {
-      ghost.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
-      if (reverse) ghost.style.opacity = "0.85";
-    });
-    ghost.addEventListener("transitionend", () => { ghost.remove(); done(); }, { once: true });
-  }
-
-  function viewportTargetRect() {
-    const w = Math.min(window.innerWidth * 0.92, 1200);
-    const h = window.innerHeight * 0.88;
-    return {
-      left: (window.innerWidth - w) / 2,
-      top: (window.innerHeight - h) / 2,
-      width: w,
-      height: h
-    };
-  }
-
+  
   function openModal(fromItem) {
+    if (__pf_animating) return;
     const img = fromItem.querySelector("img");
+    __pf_lastThumb = img;
     mImg.src = img.src; mImg.alt = img.alt || "";
     mTitle.textContent = fromItem.getAttribute("data-title") || "";
     mCap.textContent = fromItem.getAttribute("data-caption") || "";
 
     const fromRect = img.getBoundingClientRect();
-    const toRect = viewportTargetRect();
 
-    fly(fromRect, toRect, img.src, false, () => {
-      //modal.classList.add("is-open");
-      //document.body.classList.add("pf-lock");
-      //modal.setAttribute("aria-hidden", "false");
+    // Show modal but hide inner during the flight so we can measure the final image rect
+    const inner = modal.querySelector(".inner");
+    const prevInnerOpacity = inner.style.opacity;
+    inner.style.opacity = "0";
+    modal.classList.add("is-open");
+    document.body.classList.add("pf-lock");
+    modal.setAttribute("aria-hidden", "false");
+
+    // Wait a tick for layout, then measure target rect and animate
+    requestAnimationFrame(() => {
+      const toRect = mImg.getBoundingClientRect();
+      if (prefersReduced) {
+        inner.style.opacity = prevInnerOpacity || "";
+        return;
+      }
+      flyBetweenRects(img.src, fromRect, toRect, () => {
+        inner.style.opacity = prevInnerOpacity || "";
+      });
     });
   }
 
+
+  
   function closeModal() {
-    const wasOpen = modal.classList.contains("is-open");
-    modal.classList.remove("is-open");
-    document.body.classList.remove("pf-lock");
-    modal.setAttribute("aria-hidden", "true");
-    if (wasOpen && mImg && !prefersReduced) {
-      const target = grid.querySelector(`img[src="${mImg.src}"]`);
-      if (target) {
-        const targetRect = target.getBoundingClientRect();
-        fly(viewportTargetRect(), targetRect, mImg.src, true);
-      }
+    if (__pf_animating) return;
+    const inner = modal.querySelector(".inner");
+    const fromRect = mImg.getBoundingClientRect();
+    const target = __pf_lastThumb || (grid ? grid.querySelector('img[src="' + mImg.src + '"]') : null);
+    if (!target || prefersReduced) {
+      // Fallback: immediate close
+      modal.classList.remove("is-open");
+      document.body.classList.remove("pf-lock");
+      modal.setAttribute("aria-hidden", "true");
+      return;
     }
+    // Keep overlay up, hide the chrome, and fly back to the thumb.
+    const prevInnerOpacity = inner.style.opacity;
+    inner.style.opacity = "0";
+    flyBetweenRects(mImg.src, fromRect, target.getBoundingClientRect(), () => {
+      inner.style.opacity = prevInnerOpacity || "";
+      modal.classList.remove("is-open");
+      document.body.classList.remove("pf-lock");
+      modal.setAttribute("aria-hidden", "true");
+    });
   }
 
-  function applyFilters(items, pushState) {
-    if (pushState === void 0) pushState = false;
+
+  function applyFilters(items) {
     const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
     const q = byText(searchInput ? searchInput.value : "");
     let visible = 0;
@@ -177,10 +197,10 @@
         const lab = cb.closest('.pf-chip');
         if (lab) lab.classList.toggle('active', cb.checked);
       }
-      applyFilters(items, true);
+      applyFilters(items);
     });
 
-    searchInput.addEventListener("input", () => applyFilters(items, true));
+    searchInput.addEventListener("input", () => applyFilters(items));
 
     clearBtn.addEventListener("click", () => {
       $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
@@ -189,11 +209,8 @@
         if (lab) lab.classList.remove('active');
       });
       searchInput.value = "";
-      applyFilters(items, true);
+      applyFilters(items);
     });
-
-    wireTilt();
-    applyFilters(items);
 
     grid.addEventListener("click", e => {
       const card = e.target.closest(".pf-item");
@@ -203,25 +220,8 @@
     mClose.addEventListener("click", closeModal);
     modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
     document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
-  }
 
-  function wireTilt() {
-    if (prefersReduced) return;
-    grid.addEventListener("mousemove", (e) => {
-      const card = e.target.closest(".pf-item");
-      if (!card) return;
-      const r = card.getBoundingClientRect();
-      const cx = r.left + r.width/2, cy = r.top + r.height/2;
-      const dx = (e.clientX - cx) / r.width;
-      const dy = (e.clientY - cy) / r.height;
-      const max = 6;
-      card.style.setProperty("--ry", (dx*max) + "deg");
-      card.style.setProperty("--rx", (-dy*max) + "deg");
-    });
-    grid.addEventListener("mouseleave", (e) => {
-      const c = e.target.closest(".pf-item");
-      if (c) { c.style.setProperty("--ry","0deg"); c.style.setProperty("--rx","0deg"); }
-    }, true);
+    applyFilters(items);
   }
 
   document.addEventListener("DOMContentLoaded", init);
