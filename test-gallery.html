@@ -74,19 +74,20 @@
 </div>
 
 <!-- Modal -->
-<div class="pf-modal" id="pf-modal" aria-hidden="true" role="dialog" aria-label="Image preview">
+<!-- Modal -->
+<div id="pf-modal" class="pf-modal" aria-hidden="true">
   <div class="inner">
-    <div class="bar">
-      <div class="title" id="pf-modal-title"></div>
-      <button class="close" id="pf-modal-close" aria-label="Close">×</button>
+    <button id="pf-modal-close" class="close" aria-label="Close">×</button>
+    <img id="pf-modal-img" src="" alt="" />
+    <div class="caption">
+      <strong id="pf-modal-title"></strong>
+      <p id="pf-modal-cap"></p>
     </div>
-    <img id="pf-modal-img" alt="">
-    <div class="cap" id="pf-modal-cap"></div>
   </div>
 </div>
 
 <link rel="stylesheet" href="gallery-style.css">
-<script src="gallery-script.js"></script>
+<script src="gallery-script-noanim.js"></script>
 
 
 </body>
