@@ -1,27 +1,40 @@
 <style>
-/* gallery-style.css — pastel theme, centered controls, search above tags, even tag grid */
+/* gallery-style.css — coordinated with page bg #E3DEFA
+   - Search header: pastel yellow
+   - Tags panel: mint/aqua (non-purple)
+   - Chips: soft butter yellow
+   - Cards: white with subtle lavender border
+   - Centered sticky controls; search on top; even tag grid
+*/
+
 /* ===== THEME / TOKENS ===== */
 .pf-wrap {
   --gap: 1.1rem;
   --radius: 36px;
 
-  --muted:#55536a;              /* muted text */
-  --fg:#1d1c2a;                 /* main text */
-  --line:#d0caee;               /* lines, still soft lavender to blend with bg */
+  /* Typography & lines */
+  --muted:#55536a;              /* subdued text */
+  --fg:#1d1c2a;                 /* primary text */
+  --line:#d0caee;               /* thin lines that harmonize with #E3DEFA */
 
-  --chip:#fdf6d9;               /* soft butter yellow chip */
-  --chip-border:#f0dca8;
+  /* Chips (tag buttons) */
+  --chip:#2577e157;               /* soft butter yellow */
+  --chip-border:#c5bfef;        /* warm chip border */
 
-  --panelA:#fff8cc;             /* search header: pastel yellow */
-  --panelB:#e5f9f0;             /* tags panel: minty aqua instead of purple */
-  --panelB-border:#a8e4cf;
+  /* Panels */
+  --panelA:#fff8cc9e;             /* search header: pastel yellow */
+  --panelB:#e5f9f0;             /* tags panel: minty aqua (non-purple) */
+  --panelB-border:#a8e4cf;      /* mint border */
 
-  --card-bg:#ffffff;            /* cards remain white */
-  --card-border:#d6d0f0;
+  /* Cards */
+  --card-bg:#ffffff;            /* card background */
+  --card-border:#d6d0f0;        /* subtle lavender border to tie to page bg */
 
-  --highlight:#9bd8ff;          /* sky blue for active accents */
+  /* Accents */
+  --accent-blue:#9bd8ff;        /* sky blue pop for active effects */
 }
 
+/* Container alignment */
 #gallery.pf-wrap {
   max-width: 1200px;
   margin: 0 auto;
@@ -80,18 +93,20 @@
 /* ===== FILTER CHIPS ===== */
 .pf-chip{
   display:inline-flex; align-items:center; justify-content:center; gap:.35rem;
-  padding:.5rem .8rem; border-radius:999px;
+  padding:.5rem .8rem; border-radius:12px;
   font-size:.85rem; font-weight:600; letter-spacing:.01em;
   background: var(--chip); color:#3a3a43; border:1px solid var(--chip-border);
   cursor:pointer; user-select:none;
-  transition: transform .25s cubic-bezier(.22,.61,.2,1), background .2s, color .2s, box-shadow .2s;
+  transition: transform .25s cubic-bezier(.22,.61,.2,1), background .2s, color .2s, box-shadow .2s, border-color .2s;
 }
 .pf-chip:hover{ transform: translateY(-1px); box-shadow:0 6px 14px rgba(0,0,0,.06) }
 .pf-chip input{ display:none }
 .pf-chip.active{
-  background: linear-gradient(180deg,#cfe9ff 0%, #e3d9ff 100%); /* soft blue -> lavender */
-  color:#2d2d3a; border-color:#c9d7ff;
-  box-shadow:0 10px 22px rgba(102,126,234,.18);
+  /* active chip uses a gentle gradient with sky-blue accent */
+  background: linear-gradient(180deg, #fff2b8 0%, #e9ffd9 40%, #d6f4ff 100%);
+  color:#2d2d3a;
+  border-color: #e6d899;
+  box-shadow:0 10px 22px rgba(155,216,255,.22);
 }
 
 /* ===== SEARCH & CLEAR ===== */
@@ -114,7 +129,7 @@
 .pf-grid{
   display:grid; gap: var(--gap);
   grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) );
-  margin-top: 1rem;
+  margin-top: .5rem;
 }
 
 /* ===== CARD ===== */
@@ -146,9 +161,9 @@
 }
 .pf-card-tags{ display:flex; flex-wrap:wrap; gap:.35rem }
 .pf-card-tag{
-  background:#f7f5ff; color:#646b7a; border-radius:999px;
+  background:#f7fdfb; color:#545a67; border-radius:999px;
   padding:.2rem .6rem; line-height:1.25; font-size:.78rem;
-  border:1px solid #ebe6ff;
+  border:1px solid #cfeee4;
 }
 
 .pf-hide{ display:none !important }
@@ -187,5 +202,6 @@ body.pf-lock{ overflow:hidden }
   .pf-item:hover{ --scale:1.25 }
   .pf-search input{ min-width: 11rem }
 }
+
 </style>
 
