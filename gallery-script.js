@@ -15,40 +15,32 @@
   const mCap = $("#pf-modal-cap");
   const mClose = $("#pf-modal-close");
 
+  // Motion settings & state
   const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let __pf_animating = false;
   let __pf_lastThumb = null;
 
-  function flyBetweenRects(imgSrc, fromRect, toRect, onDone) {
-    if (prefersReduced) { onDone && onDone(); return; }
-    __pf_animating = true;
-    const ghost = document.createElement("img");
-    ghost.src = imgSrc; ghost.alt = "";
-    Object.assign(ghost.style, {
-      position: "fixed",
-      left: fromRect.left + "px",
-      top: fromRect.top + "px",
-      width: fromRect.width + "px",
-      height: fromRect.height + "px",
-      borderRadius: "8px",
-      zIndex: "99999",
-      pointerEvents: "none",
-      transition: "transform .34s cubic-bezier(.2,.7,.2,1), opacity .34s ease"
-    });
-    document.body.appendChild(ghost);
-    const dx = (toRect.left + toRect.width/2) - (fromRect.left + fromRect.width/2);
-    const dy = (toRect.top + toRect.height/2) - (fromRect.top + fromRect.height/2);
-    const sx = toRect.width / fromRect.width;
-    const sy = toRect.height / fromRect.height;
-    const scale = Math.min(sx, sy);
-    requestAnimationFrame(() => {
-      ghost.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
-    });
-    ghost.addEventListener("transitionend", () => {
-      ghost.remove();
-      __pf_animating = false;
-      onDone && onDone();
-    }, { once: true });
+  // Compute transform-origin on the modal .inner so that scaling centers on the modal image
+  function setInnerOriginToImage(innerEl, imgEl) {
+    const innerRect = innerEl.getBoundingClientRect();
+    const imgRect   = imgEl.getBoundingClientRect();
+    const ox = imgRect.left - innerRect.left;
+    const oy = imgRect.top  - innerRect.top;
+    innerEl.style.transformOrigin = ox + "px " + oy + "px";
+    return { innerRect, imgRect };
+  }
+
+  // Given a thumbnail rect and the modal image rect, compute the transform that makes the modal image overlap the thumb
+  function computeStartTransform(fromRect, toImgRect) {
+    const sx = fromRect.width  / toImgRect.width;
+    const sy = fromRect.height / toImgRect.height;
+    const tx = fromRect.left - toImgRect.left;
+    const ty = fromRect.top  - toImgRect.top;
+    return { sx, sy, tx, ty };
+  }
+
+  function withTransition(el, value) {
+    el.style.transition = value;
   }
 
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
@@ -93,58 +85,154 @@
   
   function openModal(fromItem) {
     if (__pf_animating) return;
-    const img = fromItem.querySelector("img");
-    __pf_lastThumb = img;
-    mImg.src = img.src; mImg.alt = img.alt || "";
+    const thumbImg = fromItem.querySelector("img");
+    __pf_lastThumb = thumbImg;
+
+    // Populate modal content
+    mImg.src = thumbImg.src; 
+    mImg.alt = thumbImg.alt || "";
     mTitle.textContent = fromItem.getAttribute("data-title") || "";
-    mCap.textContent = fromItem.getAttribute("data-caption") || "";
+    mCap.textContent   = fromItem.getAttribute("data-caption") || "";
 
-    const fromRect = img.getBoundingClientRect();
+    
+    // Ensure modal image is ready for accurate rects
+    const proceed = () => {
+      const inner = modal.querySelector(".inner");
 
-    // Show modal but hide inner during the flight so we can measure the final image rect
+      // Make modal visible so measurement is correct, but prepare FLIP start state
+      modal.classList.add("is-open");
+      document.body.classList.add("pf-lock");
+      modal.setAttribute("aria-hidden", "false");
+
+      // Measure and set transform origin to the modal image position
+      const { imgRect: toImgRect } = setInnerOriginToImage(inner, mImg);
+      const fromRect = thumbImg.getBoundingClientRect();
+      const { sx, sy, tx, ty } = computeStartTransform(fromRect, toImgRect);
+
+      // Set starting transform (no transition), then animate to identity
+      __pf_animating = true;
+      withTransition(inner, "none");
+      inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
+      // force reflow
+      inner.offsetWidth; 
+      withTransition(inner, "transform .36s cubic-bezier(.2,.7,.2,1)");
+      inner.style.transform = "none";
+
+      function end() {
+        inner.removeEventListener("transitionend", end);
+        withTransition(inner, "");
+        __pf_animating = false;
+      }
+      inner.addEventListener("transitionend", end, { once: true });
+    };
+
+    if (!mImg.complete) {
+      mImg.addEventListener("load", proceed, { once: true });
+    } else {
+      proceed();
+    }
+    return;
+// Instant open for reduced motion
+    if (prefersReduced) {
+      modal.classList.add("is-open"); 
+      document.body.classList.add("pf-lock");
+      modal.setAttribute("aria-hidden", "false");
+      return;
+    }
+
     const inner = modal.querySelector(".inner");
-    const prevInnerOpacity = inner.style.opacity;
-    inner.style.opacity = "0";
+
+    // Make modal visible so measurement is correct, but prepare FLIP start state
     modal.classList.add("is-open");
     document.body.classList.add("pf-lock");
     modal.setAttribute("aria-hidden", "false");
 
-    // Wait a tick for layout, then measure target rect and animate
-    requestAnimationFrame(() => {
-      const toRect = mImg.getBoundingClientRect();
-      if (prefersReduced) {
-        inner.style.opacity = prevInnerOpacity || "";
-        return;
-      }
-      flyBetweenRects(img.src, fromRect, toRect, () => {
-        inner.style.opacity = prevInnerOpacity || "";
-      });
-    });
+    // Measure and set transform origin to the modal image position
+    const { imgRect: toImgRect } = setInnerOriginToImage(inner, mImg);
+    const fromRect = thumbImg.getBoundingClientRect();
+    const { sx, sy, tx, ty } = computeStartTransform(fromRect, toImgRect);
+
+    // Set starting transform (no transition), then animate to identity
+    __pf_animating = true;
+    withTransition(inner, "none");
+    inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
+    // force reflow
+    inner.offsetWidth; 
+    withTransition(inner, "transform .36s cubic-bezier(.2,.7,.2,1)");
+    inner.style.transform = "none";
+
+    function end() {
+      inner.removeEventListener("transitionend", end);
+      withTransition(inner, "");
+      __pf_animating = false;
+    }
+    inner.addEventListener("transitionend", end, { once: true });
   }
 
 
   
   function closeModal() {
     if (__pf_animating) return;
-    const inner = modal.querySelector(".inner");
-    const fromRect = mImg.getBoundingClientRect();
-    const target = __pf_lastThumb || (grid ? grid.querySelector('img[src="' + mImg.src + '"]') : null);
-    if (!target || prefersReduced) {
-      // Fallback: immediate close
+
+    // Instant close for reduced motion
+    if (prefersReduced) {
       modal.classList.remove("is-open");
       document.body.classList.remove("pf-lock");
       modal.setAttribute("aria-hidden", "true");
       return;
     }
-    // Keep overlay up, hide the chrome, and fly back to the thumb.
-    const prevInnerOpacity = inner.style.opacity;
-    inner.style.opacity = "0";
-    flyBetweenRects(mImg.src, fromRect, target.getBoundingClientRect(), () => {
-      inner.style.opacity = prevInnerOpacity || "";
+
+    const inner = modal.querySelector(".inner");
+    const thumb = __pf_lastThumb || (grid ? grid.querySelector('img[src="' + (mImg.src||"") + '"]') : null);
+
+    if (!thumb) {
+      // Fallback
       modal.classList.remove("is-open");
       document.body.classList.remove("pf-lock");
       modal.setAttribute("aria-hidden", "true");
-    });
+      return;
+    }
+
+    // Measure rects and transform-origin
+    const { imgRect: toImgRect } = setInnerOriginToImage(inner, mImg);
+    const fromRect = thumb.getBoundingClientRect();
+    const { sx, sy, tx, ty } = computeStartTransform(fromRect, toImgRect);
+
+    __pf_animating = true;
+    withTransition(inner, "transform .32s cubic-bezier(.2,.7,.2,1)");
+    inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
+
+    function end() {
+      inner.removeEventListener("transitionend", end);
+      withTransition(inner, "");
+
+      // Begin overlay fade; keep the inner at the collapsed transform until fade completes,
+      // to prevent a visible "expand while fading" ghost effect.
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("pf-lock");
+
+      let cleaned = false;
+      const afterFade = () => {
+        if (cleaned) return;
+        cleaned = true;
+        inner.style.transform = "none";
+        __pf_animating = false;
+      };
+
+      // Prefer to wait for the modal's opacity transition to finish
+      const onFade = (ev) => {
+        if (ev.target === modal && ev.propertyName === "opacity") {
+          modal.removeEventListener("transitionend", onFade);
+          afterFade();
+        }
+      };
+      modal.addEventListener("transitionend", onFade);
+
+      // Fallback: just in case the browser doesn't fire transitionend
+      setTimeout(afterFade, 400);
+    }
+    inner.addEventListener("transitionend", end, { once: true });
   }
 
 
