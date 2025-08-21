@@ -1,0 +1,31 @@
+<div id="gallery" class="pf-wrap">
+  <div class="pf-controls" aria-label="Filters and search">
+    <div class="pf-controls-row">
+      <div class="pf-tags" id="pf-tags"></div>
+    </div>
+    <div class="pf-divider"></div>
+    <div class="pf-controls-row pf-util">
+      <label class="pf-search">
+        <span>Search</span>
+        <input id="pf-search" type="search" placeholder="Search titles, captions, tags…" autocomplete="off" />
+      </label>
+      <button id="pf-clear" class="pf-clear" type="button" aria-label="Clear filters">Clear</button>
+      <div class="pf-count" id="pf-count" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="pf-grid" id="pf-grid"></div>
+  <div id="pf-error" class="pf-error" aria-live="assertive" hidden></div>
+</div>
+
+<!-- Modal -->
+<div class="pf-modal" id="pf-modal" aria-hidden="true" role="dialog" aria-label="Image preview">
+  <div class="inner">
+    <div class="bar">
+      <div class="title" id="pf-modal-title"></div>
+      <button class="close" id="pf-modal-close" aria-label="Close">×</button>
+    </div>
+    <img id="pf-modal-img" alt="">
+    <div class="cap" id="pf-modal-cap"></div>
+  </div>
+</div>
