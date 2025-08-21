@@ -1,0 +1,178 @@
+<!-- ===== Portfolio Gallery (Carrd) — slick controls box + smoother hover + press + FLIP modal ===== -->
+<div id="gallery" class="pf-wrap">
+  <div class="pf-controls" aria-label="Filters and search">
+    <div class="pf-controls-row">
+      <div class="pf-tags" id="pf-tags"></div>
+    </div>
+    <div class="pf-divider"></div>
+    <div class="pf-controls-row pf-util">
+      <label class="pf-search">
+        <span>Search</span>
+        <input id="pf-search" type="search" placeholder="Search titles, captions, tags…" autocomplete="off" />
+      </label>
+      <button id="pf-clear" class="pf-clear" type="button" aria-label="Clear filters">Clear</button>
+      <div class="pf-count" id="pf-count" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="pf-grid" id="pf-grid"></div>
+  <div id="pf-error" class="pf-error" aria-live="assertive" hidden></div>
+</div>
+
+<!-- Modal -->
+<div class="pf-modal" id="pf-modal" aria-hidden="true" role="dialog" aria-label="Image preview">
+  <div class="inner">
+    <div class="bar">
+      <div class="title" id="pf-modal-title"></div>
+      <button class="close" id="pf-modal-close" aria-label="Close">×</button>
+    </div>
+    <img id="pf-modal-img" alt="">
+    <div class="cap" id="pf-modal-cap"></div>
+  </div>
+</div>
+
+<style>
+/* ========== THEME / LAYOUT ========== */
+.pf-wrap {
+  --gap: 1.1rem;
+  --radius: 16px;
+  --muted:#667085; --fg:#0f172a; --line:#e6e8ec;
+  --chip:#f7f7fb; --chip-border:#e8e8f3;
+  max-width: 1200px; margin: 0 auto; padding: 1.25rem 1rem;
+}
+#gallery.pf-wrap { align-self:flex-start; justify-self:start; } /* top-align if template centers */
+
+/* Controls box: friendly, “card-like” */
+.pf-controls {
+  position: sticky; top: 0; z-index: 50;
+  display:flex; flex-direction:column; gap:.65rem;
+  padding:.9rem; margin: 0 0 1rem;
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(250,252,255,.88));
+  border: 1px solid rgba(15,23,42,.08);
+  border-radius: 14px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(15,23,42,.08);
+}
+.pf-controls-row { display:flex; flex-wrap:wrap; gap:.5rem .55rem; align-items:center }
+.pf-divider {
+  height:1px; background: linear-gradient(90deg, transparent, rgba(15,23,42,.1), transparent);
+  margin:.2rem 0;
+}
+.pf-tags { display:flex; flex-wrap:wrap; gap:.45rem; max-width:100% }
+.pf-error { margin:.4rem 0; padding:.6rem .8rem; border-radius:10px; background:#fff3cd; color:#7a5a00; border:1px solid #ffe69c; }
+.pf-count { color:var(--muted); margin-left:auto }
+
+/* ========== FILTER CHIPS ========== */
+.pf-chip{
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding:.35rem .65rem; border-radius:999px;
+  font-size:.85rem; font-weight:500; letter-spacing:.01em;
+  background: var(--chip); color:#3a3a43; border:1px solid var(--chip-border);
+  cursor:pointer; user-select:none;
+  transition: transform .25s cubic-bezier(.22,.61,.2,1), background .2s, color .2s, box-shadow .2s;
+}
+.pf-chip:hover{ transform: translateY(-1px); box-shadow:0 6px 14px rgba(0,0,0,.06) }
+.pf-chip input{ display:none }
+.pf-chip.active{
+  background: linear-gradient(180deg,#111 0%,#222 100%);
+  color:#fff; border-color:#111; box-shadow:0 10px 22px rgba(0,0,0,.22);
+}
+
+/* ========== SEARCH & CLEAR ========== */
+.pf-util { gap:.6rem }
+.pf-search{
+  display:flex; align-items:center; gap:.5rem;
+  border:1px solid var(--line); padding:.45rem .7rem; border-radius:999px;
+  background:#fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+.pf-search span{ color:var(--muted); font-size:.85rem }
+.pf-search input{ border:0; outline:0; min-width:16rem; background:transparent }
+.pf-clear{
+  border:1px solid var(--line); background:#fff;
+  padding:.45rem .8rem; border-radius:999px; cursor:pointer;
+  transition: background .2s, transform .2s;
+}
+.pf-clear:hover{ background:#f5f5f9; transform: translateY(-1px) }
+
+/* ========== GRID ========== */
+.pf-grid{
+  display:grid; gap: var(--gap);
+  grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) );
+}
+
+/* ========== CARD ========== */
+.pf-item{
+  --rx:0deg; --ry:0deg; --scale:1;
+  position:relative; overflow:hidden; z-index:0;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg,#fff,#fafbff);
+  border: 1px solid rgba(15,23,42,.06);
+  box-shadow: 0 6px 14px rgba(15,23,42,.08), 0 1px 2px rgba(15,23,42,.06);
+  transform-origin: top center;
+  will-change: transform, box-shadow;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry)) scale(var(--scale)) translateZ(0);
+  transition: transform .42s cubic-bezier(.22,.61,.2,1), box-shadow .42s ease, border-color .42s ease;
+}
+.pf-item:hover{
+  --scale:1.5;
+  box-shadow: 0 20px 44px rgba(15,23,42,.18), 0 10px 22px rgba(15,23,42,.12);
+  z-index:5;
+}
+
+/* Uniform thumb with cover crop */
+.pf-item .thumb{ position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; }
+.pf-item .thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+
+/* Caption */
+.pf-item figcaption{ padding:.75rem .9rem; color:var(--muted) }
+.pf-item figcaption strong{
+  display:block; color:var(--fg); font-weight:700; letter-spacing:.01em;
+  margin-bottom:.35rem; line-height:1.2;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.pf-card-tags{ display:flex; flex-wrap:wrap; gap:.35rem }
+.pf-card-tag{
+  background:#f3f4f8; color:#646b7a; border-radius:999px;
+  padding:.2rem .6rem; line-height:1.25; font-size:.78rem;
+  border:1px solid #eaecf3;
+}
+
+.pf-hide{ display:none !important }
+
+/* ========== MODAL ========== */
+.pf-modal{
+  position:fixed; inset:0; display:none;
+  background: rgba(10,14,20,.66);
+  align-items:center; justify-content:center; padding: 2rem; z-index: 9999;
+  backdrop-filter: blur(3px);
+}
+.pf-modal.is-open{ display:flex }
+.pf-modal .inner{
+  background:#0f0f14; border-radius: 18px; overflow:hidden;
+  max-width:min(92vw,1200px); max-height:88vh;
+  box-shadow: 0 18px 48px rgba(0,0,0,.35);
+  transform: scale(.94); opacity: 0;
+  transition: transform .22s ease, opacity .22s ease;
+}
+.pf-modal.is-open .inner{ transform: scale(1); opacity: 1 }
+.pf-modal img{ display:block; width:100%; height:auto; object-fit:contain; background:#000 }
+.pf-modal .bar{ display:flex; align-items:center; justify-content:space-between; padding:.7rem 1rem; color:#eaeaf1; background:#000 }
+.pf-modal .title{ font-weight:700; font-size:1rem; letter-spacing:.01em }
+.pf-modal .close{ appearance:none; border:0; background:transparent; color:#fff; font-size:1.25rem; cursor:pointer; padding:.25rem .4rem; border-radius:8px }
+.pf-modal .close:hover{ background: rgba(255,255,255,.12) }
+.pf-modal .cap{ padding:.7rem 1rem; color:#cfd2dc; background:#0b0c10; font-size:.92rem }
+
+body.pf-lock{ overflow:hidden }
+
+/* ========== MOTION PREFERENCES / RESPONSIVE ========== */
+@media (prefers-reduced-motion: reduce){
+  .pf-item{ transition: transform .001s linear !important }
+  .pf-item:hover{ --scale:1.03 }
+  .pf-modal .inner{ transition: opacity .18s ease }
+}
+@media (max-width: 640px){
+  .pf-item:hover{ --scale:1.25 }
+  .pf-search input{ min-width: 11rem }
+}
+</style>
+
