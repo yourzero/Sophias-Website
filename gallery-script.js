@@ -1,4 +1,4 @@
-/* gallery-script.js */
+/* gallery-script.js (modal fix + overlay click + ESC + animation polish) */
 ;(function () {
   const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
@@ -12,10 +12,10 @@
   const countEl = $("#pf-count");
   const errEl = $("#pf-error");
 
-  // Single parseTags
+  if (!grid) return;
+
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
-  /* Read JSON from an element with id="pf-data" and type application/json */
   function readData() {
     const dataScript = document.getElementById("pf-data");
     if (!dataScript) {
@@ -32,7 +32,6 @@
     }
   }
 
-  /* Render grid from data */
   function renderFromData(data) {
     if (!data.items.length) return;
     const base = data.baseUrl || "";
@@ -54,7 +53,6 @@
     }).join("");
   }
 
-  /* Deep-link helpers (#gallery?tags=…&q=…) */
   function getParamsFromHash() {
     const h = location.hash || "";
     const qIndex = h.indexOf("?");
@@ -76,10 +74,9 @@
       const lab = cb.closest('.pf-chip');
       if (lab) lab.classList.toggle('active', cb.checked);
     });
-    searchInput.value = p.get("q") || "";
+    if (searchInput) searchInput.value = p.get("q") || "";
   }
 
-  /* Hover tilt */
   function wireTilt() {
     if (prefersReduced) return;
     grid.addEventListener("mousemove", (e) => {
@@ -89,7 +86,7 @@
       const cx = r.left + r.width/2, cy = r.top + r.height/2;
       const dx = (e.clientX - cx) / r.width;
       const dy = (e.clientY - cy) / r.height;
-      const max = 6; // degrees
+      const max = 6;
       card.style.setProperty("--ry", (dx*max) + "deg");
       card.style.setProperty("--rx", (-dy*max) + "deg");
     });
@@ -99,7 +96,7 @@
     }, true);
   }
 
-  /* FLIP-like zoom */
+  /* FLIP-like zoom helper */
   function fly(fromRect, toRect, imgSrc, reverse, done) {
     if (reverse === void 0) reverse = false;
     if (!done) done = function(){};
@@ -114,8 +111,9 @@
       height: fromRect.height + "px",
       borderRadius: "12px",
       boxShadow: "0 10px 28px rgba(0,0,0,.25)",
-      zIndex: "10000",
-      transition: "transform .28s cubic-bezier(.2,.7,.2,1), opacity .28s ease",
+      zIndex: "100000",           /* ensure above Carrd content */
+      pointerEvents: "none",
+      transition: "transform .32s cubic-bezier(.2,.7,.2,1), opacity .28s ease",
       transformOrigin: "center center",
       willChange: "transform, opacity"
     });
@@ -138,12 +136,10 @@
     return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
   }
 
-  /* Init */
   (function init(){
     const data = readData();
     renderFromData(data);
 
-    // Collect AFTER render
     const items = $$(".pf-item", grid).map(function(el){
       return {
         el: el,
@@ -153,7 +149,6 @@
       };
     });
 
-    // In-card tag cloud
     items.forEach(function(i){
       const box = i.el.querySelector(".pf-card-tags");
       if (box && i.tags.length) {
@@ -161,7 +156,6 @@
       }
     });
 
-    // Build filter chips
     const allTags = Array.from(new Set(items.flatMap(function(i){ return i.tags; }))).sort(function(a,b){return a.localeCompare(b);});
     allTags.forEach(function(tag){
       const id = "tg-" + tag.replace(/\s+/g,'-');
@@ -174,7 +168,7 @@
     function applyFilters(pushState){
       if (pushState === void 0) pushState = false;
       const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(function(cb){ return cb.value; });
-      const q = byText(searchInput.value);
+      const q = byText(searchInput ? searchInput.value : "");
       var visible = 0;
       items.forEach(function(i){
         const matchTags = active.every(function(tag){ return i.tags.includes(tag); });
@@ -183,27 +177,28 @@
         i.el.classList.toggle("pf-hide", !show);
         if (show) visible++;
       });
-      countEl.textContent = visible + " result" + (visible===1?"":"s");
-      if (pushState) updateHash(active, searchInput.value);
+      if (countEl) countEl.textContent = visible + " result" + (visible===1?"":"s");
+      if (pushState) updateHash(active, (searchInput ? searchInput.value : ""));
     }
 
-    // Controls
-    tagsWrap.addEventListener("change", function(e){
-      const cb = e.target.closest('input[type=checkbox]');
-      if (cb) {
-        const lab = cb.closest('.pf-chip');
-        if (lab) lab.classList.toggle('active', cb.checked);
-      }
-      applyFilters(true);
-    });
-    searchInput.addEventListener("input", function(){ applyFilters(true); });
-    clearBtn.addEventListener("click", function(){
+    if (tagsWrap) {
+      tagsWrap.addEventListener("change", function(e){
+        const cb = e.target.closest('input[type=checkbox]');
+        if (cb) {
+          const lab = cb.closest('.pf-chip');
+          if (lab) lab.classList.toggle('active', cb.checked);
+        }
+        applyFilters(true);
+      });
+    }
+    if (searchInput) searchInput.addEventListener("input", function(){ applyFilters(true); });
+    if (clearBtn) clearBtn.addEventListener("click", function(){
       $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(function(cb){
         cb.checked = false;
         const lab = cb.closest('.pf-chip');
         if (lab) lab.classList.remove('active');
       });
-      searchInput.value = "";
+      if (searchInput) searchInput.value = "";
       applyFilters(true);
     });
 
@@ -212,10 +207,9 @@
       if ((location.hash||"").startsWith("#gallery")) { setFromParams(); applyFilters(false); }
     });
 
-    // Hover tilt
     wireTilt();
 
-    // Modal + FLIP (with press micro-interaction)
+    /* ===== Modal behavior (open/close robust) ===== */
     const modal = $("#pf-modal");
     const mImg = $("#pf-modal-img");
     const mTitle = $("#pf-modal-title");
@@ -223,20 +217,8 @@
     const mClose = $("#pf-modal-close");
     let lastThumb = null, lastRect = null;
 
-    // Press bump
-    grid.addEventListener("mousedown", function(e){
-      const card = e.target.closest(".pf-item"); if (!card) return;
-      card.classList.add("pf-press");
-    });
-    grid.addEventListener("mouseup", function(e){
-      const card = e.target.closest(".pf-item"); if (!card) return;
-      setTimeout(function(){ card.classList.remove("pf-press"); }, 120);
-    });
-    grid.addEventListener("mouseleave", function(e){
-      const card = e.target.closest(".pf-item"); if (card) card.classList.remove("pf-press");
-    }, true);
-
     function openModal(fromItem) {
+      if (!modal) return;
       const img = fromItem.querySelector("img");
       mImg.src = img.src; mImg.alt = img.alt || "";
       mTitle.textContent = fromItem.getAttribute("data-title") || "";
@@ -245,29 +227,44 @@
       lastThumb = img; lastRect = img.getBoundingClientRect();
       const target = viewportTargetRect();
 
+      // Animate up, then show modal overlay
       fly(lastRect, target, img.src, false, function(){
         modal.classList.add("is-open");
         document.body.classList.add("pf-lock");
         modal.setAttribute("aria-hidden","false");
       });
     }
+
     function closeModal() {
+      if (!modal) return;
       const wasOpen = modal.classList.contains("is-open");
       modal.classList.remove("is-open");
       document.body.classList.remove("pf-lock");
       modal.setAttribute("aria-hidden","true");
+      // Animate back down after overlay is hidden
       if (wasOpen && lastThumb && lastRect && !prefersReduced) {
         const target = lastThumb.getBoundingClientRect();
         fly(viewportTargetRect(), target, mImg.src, true, function(){});
       }
     }
 
+    // Open on card click
     grid.addEventListener("click", function(e){
       const card = e.target.closest(".pf-item");
       if (card) openModal(card);
     });
-    mClose.addEventListener("click", closeModal);
-    modal.addEventListener("click", function(e){ if (e.target === modal) closeModal(); });
-    window.addEventListener("keydown", function(e){ if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal(); });
+
+    // X button
+    if (mClose) mClose.addEventListener("click", closeModal);
+
+    // Click outside inner to close (more robust than target===modal)
+    if (modal) modal.addEventListener("click", function(e){
+      if (!e.target.closest(".inner")) closeModal();
+    });
+
+    // ESC on document (some templates eat window events)
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape") closeModal();
+    });
   })();
 })();
