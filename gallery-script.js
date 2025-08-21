@@ -1,6 +1,4 @@
-
-
-<script>
+// gallery-script.js
 (() => {
   const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
@@ -14,10 +12,10 @@
   const countEl = $("#pf-count");
   const errEl = $("#pf-error");
 
-  /* === One parseTags (deduped) === */
+  // Single parseTags
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
-  /* === Read JSON from separate inline Embed (#pf-data) === */
+  // Read JSON from <script id="pf-data" type="application/json">…</script>
   function readData() {
     const dataScript = document.getElementById("pf-data");
     if (!dataScript) {
@@ -34,7 +32,7 @@
     }
   }
 
-  /* === Render items from JSON === */
+  // Render grid from data
   function renderFromData(data) {
     if (!data.items.length) return;
     const base = data.baseUrl || "";
@@ -64,7 +62,7 @@
     }).join("");
   }
 
-  /* === Deep-link helpers (#gallery?tags=…&q=…) === */
+  // Deep-link helpers (#gallery?tags=…&q=…)
   function getParamsFromHash() {
     const h = location.hash || "";
     const qIndex = h.indexOf("?");
@@ -88,7 +86,7 @@
     searchInput.value = p.get("q") || "";
   }
 
-  /* === Hover tilt (disabled if reduced motion) === */
+  // Hover tilt
   function wireTilt() {
     if (prefersReduced) return;
     grid.addEventListener("mousemove", (e) => {
@@ -96,8 +94,8 @@
       if (!card) return;
       const r = card.getBoundingClientRect();
       const cx = r.left + r.width/2, cy = r.top + r.height/2;
-      const dx = (e.clientX - cx) / r.width;   // -0.5..0.5
-      const dy = (e.clientY - cy) / r.height;  // -0.5..0.5
+      const dx = (e.clientX - cx) / r.width;
+      const dy = (e.clientY - cy) / r.height;
       const max = 6; // degrees
       card.style.setProperty("--ry", `${dx*max}deg`);
       card.style.setProperty("--rx", `${-dy*max}deg`);
@@ -108,7 +106,7 @@
     }, true);
   }
 
-  /* === FLIP-like zoom === */
+  // FLIP-like zoom
   function fly(fromRect, toRect, imgSrc, reverse=false, done=()=>{}) {
     if (prefersReduced) { done(); return; }
     const ghost = document.createElement("img");
@@ -144,7 +142,7 @@
     return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
   }
 
-  /* === Init === */
+  // Init
   (function init(){
     const data = readData();
     renderFromData(data);
@@ -266,5 +264,3 @@
     window.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal(); });
   })();
 })();
-</script>
-<!-- ===== /Portfolio Gallery ===== -->
