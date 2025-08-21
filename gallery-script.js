@@ -1,5 +1,5 @@
-// gallery-script.js
-(() => {
+/* gallery-script.js */
+;(function () {
   const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
   const byText = (t) => (t||"").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g,"");
@@ -15,7 +15,7 @@
   // Single parseTags
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
-  // Read JSON from <script id="pf-data" type="application/json">…</script>
+  /* Read JSON from <script id="pf-data" type="application/json">…</script> */
   function readData() {
     const dataScript = document.getElementById("pf-data");
     if (!dataScript) {
@@ -32,7 +32,7 @@
     }
   }
 
-  // Render grid from data
+  /* Render grid from data */
   function renderFromData(data) {
     if (!data.items.length) return;
     const base = data.baseUrl || "";
@@ -45,24 +45,16 @@
       const dataTags = tags.join(", ");
       const titleEsc = title.replace(/"/g,'&quot;');
       const captionEsc = caption.replace(/"/g,'&quot;');
-      return `
-        <figure class="pf-item"
-                data-tags="${dataTags}"
-                data-title="${titleEsc}"
-                data-caption="${captionEsc}">
-          <div class="thumb">
-            <img src="${src}" alt="${alt}" loading="lazy" />
-          </div>
-          <figcaption>
-            <strong>${title}</strong>
-            <small class="pf-card-tags"></small>
-          </figcaption>
-        </figure>
-      `;
+      return (
+        '<figure class="pf-item" data-tags="' + dataTags + '" data-title="' + titleEsc + '" data-caption="' + captionEsc + '">' +
+          '<div class="thumb"><img src="' + src + '" alt="' + alt + '" loading="lazy" /></div>' +
+          '<figcaption><strong>' + title + '</strong><small class="pf-card-tags"></small></figcaption>' +
+        '</figure>'
+      );
     }).join("");
   }
 
-  // Deep-link helpers (#gallery?tags=…&q=…)
+  /* Deep-link helpers (#gallery?tags=…&q=…) */
   function getParamsFromHash() {
     const h = location.hash || "";
     const qIndex = h.indexOf("?");
@@ -81,12 +73,13 @@
     const want = (p.get("tags")||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
     $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
       cb.checked = want.includes(cb.value);
-      cb.closest('.pf-chip')?.classList.toggle('active', cb.checked);
+      const lab = cb.closest('.pf-chip');
+      if (lab) lab.classList.toggle('active', cb.checked);
     });
     searchInput.value = p.get("q") || "";
   }
 
-  // Hover tilt
+  /* Hover tilt */
   function wireTilt() {
     if (prefersReduced) return;
     grid.addEventListener("mousemove", (e) => {
@@ -97,8 +90,8 @@
       const dx = (e.clientX - cx) / r.width;
       const dy = (e.clientY - cy) / r.height;
       const max = 6; // degrees
-      card.style.setProperty("--ry", `${dx*max}deg`);
-      card.style.setProperty("--rx", `${-dy*max}deg`);
+      card.style.setProperty("--ry", (dx*max) + "deg");
+      card.style.setProperty("--rx", (-dy*max) + "deg");
     });
     grid.addEventListener("mouseleave", (e) => {
       const c = e.target.closest(".pf-item");
@@ -106,17 +99,19 @@
     }, true);
   }
 
-  // FLIP-like zoom
-  function fly(fromRect, toRect, imgSrc, reverse=false, done=()=>{}) {
+  /* FLIP-like zoom */
+  function fly(fromRect, toRect, imgSrc, reverse, done) {
+    if (reverse === void 0) reverse = false;
+    if (!done) done = function(){};
     if (prefersReduced) { done(); return; }
     const ghost = document.createElement("img");
     ghost.src = imgSrc; ghost.alt = "";
     Object.assign(ghost.style, {
       position: "fixed",
-      left: `${fromRect.left}px`,
-      top: `${fromRect.top}px`,
-      width: `${fromRect.width}px`,
-      height: `${fromRect.height}px`,
+      left: fromRect.left + "px",
+      top: fromRect.top + "px",
+      width: fromRect.width + "px",
+      height: fromRect.height + "px",
       borderRadius: "12px",
       boxShadow: "0 10px 28px rgba(0,0,0,.25)",
       zIndex: "10000",
@@ -130,54 +125,59 @@
     const sx = toRect.width / fromRect.width;
     const sy = toRect.height / fromRect.height;
     const scale = Math.min(sx, sy);
-    requestAnimationFrame(() => {
-      ghost.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+    requestAnimationFrame(function() {
+      ghost.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
       if (reverse) ghost.style.opacity = "0.85";
     });
-    ghost.addEventListener("transitionend", () => { ghost.remove(); done(); }, { once: true });
+    ghost.addEventListener("transitionend", function() { ghost.remove(); done(); }, { once: true });
   }
-  function viewportTargetRect(maxW = Math.min(window.innerWidth*0.92, 1200),
-                              maxH = window.innerHeight*0.88) {
+  function viewportTargetRect(maxW, maxH) {
+    if (maxW === void 0) maxW = Math.min(window.innerWidth*0.92, 1200);
+    if (maxH === void 0) maxH = window.innerHeight*0.88;
     const w = maxW, h = maxH;
     return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
   }
 
+  /* Init */
   (function init(){
     const data = readData();
     renderFromData(data);
 
     // Collect AFTER render
-    const items = $$(".pf-item", grid).map(el => ({
-      el,
-      title: byText(el.getAttribute("data-title")),
-      caption: byText(el.getAttribute("data-caption")),
-      tags: parseTags(el)
-    }));
+    const items = $$(".pf-item", grid).map(function(el){
+      return {
+        el: el,
+        title: byText(el.getAttribute("data-title")),
+        caption: byText(el.getAttribute("data-caption")),
+        tags: parseTags(el)
+      };
+    });
 
     // In-card tag cloud
-    items.forEach(i => {
+    items.forEach(function(i){
       const box = i.el.querySelector(".pf-card-tags");
       if (box && i.tags.length) {
-        box.innerHTML = i.tags.map(t => `<span class="pf-card-tag">${t}</span>`).join("");
+        box.innerHTML = i.tags.map(function(t){ return '<span class="pf-card-tag">' + t + '</span>'; }).join("");
       }
     });
 
     // Build filter chips
-    const allTags = Array.from(new Set(items.flatMap(i => i.tags))).sort((a,b)=>a.localeCompare(b));
-    allTags.forEach(tag => {
-      const id = `tg-${tag.replace(/\s+/g,'-')}`;
+    const allTags = Array.from(new Set(items.flatMap(function(i){ return i.tags; }))).sort(function(a,b){return a.localeCompare(b);});
+    allTags.forEach(function(tag){
+      const id = "tg-" + tag.replace(/\s+/g,'-');
       const chip = document.createElement("label");
       chip.className = "pf-chip";
-      chip.innerHTML = `<input type="checkbox" value="${tag}" id="${id}" aria-label="${tag}"><span>${tag}</span>`;
+      chip.innerHTML = '<input type="checkbox" value="'+ tag +'" id="'+ id +'" aria-label="'+ tag +'"><span>'+ tag +'</span>';
       tagsWrap.appendChild(chip);
     });
 
-    function applyFilters(pushState=false) {
-      const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
+    function applyFilters(pushState){
+      if (pushState === void 0) pushState = false;
+      const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(function(cb){ return cb.value; });
       const q = byText(searchInput.value);
-      let visible = 0;
-      items.forEach(i => {
-        const matchTags = active.every(tag => i.tags.includes(tag));
+      var visible = 0;
+      items.forEach(function(i){
+        const matchTags = active.every(function(tag){ return i.tags.includes(tag); });
         const matchText = !q || i.title.includes(q) || i.caption.includes(q) || i.tags.join(" ").includes(q);
         const show = matchTags && matchText;
         i.el.classList.toggle("pf-hide", !show);
@@ -188,23 +188,27 @@
     }
 
     // Controls
-    tagsWrap.addEventListener("change", (e) => {
+    tagsWrap.addEventListener("change", function(e){
       const cb = e.target.closest('input[type=checkbox]');
-      if (cb) cb.closest('.pf-chip')?.classList.toggle('active', cb.checked);
+      if (cb) {
+        const lab = cb.closest('.pf-chip');
+        if (lab) lab.classList.toggle('active', cb.checked);
+      }
       applyFilters(true);
     });
-    searchInput.addEventListener("input", () => applyFilters(true));
-    clearBtn.addEventListener("click", () => {
-      $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
+    searchInput.addEventListener("input", function(){ applyFilters(true); });
+    clearBtn.addEventListener("click", function(){
+      $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(function(cb){
         cb.checked = false;
-        cb.closest('.pf-chip')?.classList.remove('active');
+        const lab = cb.closest('.pf-chip');
+        if (lab) lab.classList.remove('active');
       });
       searchInput.value = "";
       applyFilters(true);
     });
 
     setFromParams(); applyFilters(false);
-    window.addEventListener("hashchange", () => {
+    window.addEventListener("hashchange", function(){
       if ((location.hash||"").startsWith("#gallery")) { setFromParams(); applyFilters(false); }
     });
 
@@ -220,15 +224,15 @@
     let lastThumb = null, lastRect = null;
 
     // Press bump
-    grid.addEventListener("mousedown", (e) => {
+    grid.addEventListener("mousedown", function(e){
       const card = e.target.closest(".pf-item"); if (!card) return;
       card.classList.add("pf-press");
     });
-    grid.addEventListener("mouseup", (e) => {
+    grid.addEventListener("mouseup", function(e){
       const card = e.target.closest(".pf-item"); if (!card) return;
-      setTimeout(() => card.classList.remove("pf-press"), 120);
+      setTimeout(function(){ card.classList.remove("pf-press"); }, 120);
     });
-    grid.addEventListener("mouseleave", (e) => {
+    grid.addEventListener("mouseleave", function(e){
       const card = e.target.closest(".pf-item"); if (card) card.classList.remove("pf-press");
     }, true);
 
@@ -241,7 +245,7 @@
       lastThumb = img; lastRect = img.getBoundingClientRect();
       const target = viewportTargetRect();
 
-      fly(lastRect, target, img.src, false, () => {
+      fly(lastRect, target, img.src, false, function(){
         modal.classList.add("is-open");
         document.body.classList.add("pf-lock");
         modal.setAttribute("aria-hidden","false");
@@ -254,18 +258,16 @@
       modal.setAttribute("aria-hidden","true");
       if (wasOpen && lastThumb && lastRect && !prefersReduced) {
         const target = lastThumb.getBoundingClientRect();
-        fly(viewportTargetRect(), target, mImg.src, true, () => {});
+        fly(viewportTargetRect(), target, mImg.src, true, function(){});
       }
     }
 
-    grid.addEventListener("click", (e) => {
+    grid.addEventListener("click", function(e){
       const card = e.target.closest(".pf-item");
       if (card) openModal(card);
     });
     mClose.addEventListener("click", closeModal);
-    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
-    });
+    modal.addEventListener("click", function(e){ if (e.target === modal) closeModal(); });
+    window.addEventListener("keydown", function(e){ if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal(); });
   })();
 })();
