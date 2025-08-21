@@ -67,8 +67,7 @@
       width: fromRect.width + "px",
       height: fromRect.height + "px",
       borderRadius: "12px",
-      boxShadow: "0 10px 28px rgba(0,0,0,.25)",
-      zIndex: "100000",
+      zIndex: "9999",
       pointerEvents: "none",
       transition: "transform .32s cubic-bezier(.2,.7,.2,1), opacity .32s ease",
       transformOrigin: "center center",
@@ -87,11 +86,15 @@
     ghost.addEventListener("transitionend", () => { ghost.remove(); done(); }, { once: true });
   }
 
-  function viewportTargetRect(maxW, maxH) {
-    if (maxW === void 0) maxW = Math.min(window.innerWidth*0.92, 1200);
-    if (maxH === void 0) maxH = window.innerHeight*0.88;
-    const w = maxW, h = maxH;
-    return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
+  function viewportTargetRect() {
+    const w = Math.min(window.innerWidth * 0.92, 1200);
+    const h = window.innerHeight * 0.88;
+    return {
+      left: (window.innerWidth - w) / 2,
+      top: (window.innerHeight - h) / 2,
+      width: w,
+      height: h
+    };
   }
 
   function openModal(fromItem) {
@@ -124,30 +127,82 @@
     }
   }
 
-  function getParamsFromHash() {
-    const h = location.hash || "";
-    const qIndex = h.indexOf("?");
-    return new URLSearchParams(qIndex >= 0 ? h.slice(qIndex+1) : "");
-  }
-
-  function updateHash(active, q) {
-    const params = new URLSearchParams();
-    if (active.length) params.set("tags", active.join(","));
-    if (q) params.set("q", q);
-    const base = location.href.split("#")[0];
-    const hash = "gallery" + (params.toString() ? "?" + params.toString() : "");
-    history.replaceState(null, "", base + "#" + hash);
-  }
-
-  function setFromParams() {
-    const p = getParamsFromHash();
-    const want = (p.get("tags")||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
-    $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
-      cb.checked = want.includes(cb.value);
-      const lab = cb.closest('.pf-chip');
-      if (lab) lab.classList.toggle('active', cb.checked);
+  function applyFilters(items, pushState) {
+    if (pushState === void 0) pushState = false;
+    const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
+    const q = byText(searchInput ? searchInput.value : "");
+    let visible = 0;
+    items.forEach(function(i){
+      const matchTags = active.every(tag => i.tags.includes(tag));
+      const matchText = !q || i.title.includes(q) || i.caption.includes(q) || i.tags.join(" ").includes(q);
+      const show = matchTags && matchText;
+      i.el.classList.toggle("pf-hide", !show);
+      if (show) visible++;
     });
-    if (searchInput) searchInput.value = p.get("q") || "";
+    if (countEl) countEl.textContent = visible + " result" + (visible === 1 ? "" : "s");
+  }
+
+  function init() {
+    const data = readData();
+    renderFromData(data);
+
+    const items = $$(".pf-item", grid).map(el => {
+      return {
+        el,
+        title: byText(el.getAttribute("data-title")),
+        caption: byText(el.getAttribute("data-caption")),
+        tags: parseTags(el)
+      };
+    });
+
+    items.forEach(i => {
+      const box = i.el.querySelector(".pf-card-tags");
+      if (box && i.tags.length) {
+        box.innerHTML = i.tags.map(t => `<span class="pf-card-tag">${t}</span>`).join("");
+      }
+    });
+
+    const allTags = Array.from(new Set(items.flatMap(i => i.tags))).sort();
+    allTags.forEach(tag => {
+      const id = "tg-" + tag.replace(/\s+/g,'-');
+      const chip = document.createElement("label");
+      chip.className = "pf-chip";
+      chip.innerHTML = '<input type="checkbox" value="'+ tag +'" id="'+ id +'" aria-label="'+ tag +'"><span>'+ tag +'</span>';
+      tagsWrap.appendChild(chip);
+    });
+
+    tagsWrap.addEventListener("change", e => {
+      const cb = e.target.closest('input[type=checkbox]');
+      if (cb) {
+        const lab = cb.closest('.pf-chip');
+        if (lab) lab.classList.toggle('active', cb.checked);
+      }
+      applyFilters(items, true);
+    });
+
+    searchInput.addEventListener("input", () => applyFilters(items, true));
+
+    clearBtn.addEventListener("click", () => {
+      $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
+        cb.checked = false;
+        const lab = cb.closest('.pf-chip');
+        if (lab) lab.classList.remove('active');
+      });
+      searchInput.value = "";
+      applyFilters(items, true);
+    });
+
+    wireTilt();
+    applyFilters(items);
+
+    grid.addEventListener("click", e => {
+      const card = e.target.closest(".pf-item");
+      if (card) openModal(card);
+    });
+
+    mClose.addEventListener("click", closeModal);
+    modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
   }
 
   function wireTilt() {
@@ -169,94 +224,5 @@
     }, true);
   }
 
-  (function init(){
-    const data = readData();
-    renderFromData(data);
-
-    const items = $$(".pf-item", grid).map(function(el){
-      return {
-        el: el,
-        title: byText(el.getAttribute("data-title")),
-        caption: byText(el.getAttribute("data-caption")),
-        tags: parseTags(el)
-      };
-    });
-
-    items.forEach(function(i){
-      const box = i.el.querySelector(".pf-card-tags");
-      if (box && i.tags.length) {
-        box.innerHTML = i.tags.map(function(t){ return '<span class="pf-card-tag">' + t + '</span>'; }).join("");
-      }
-    });
-
-    const allTags = Array.from(new Set(items.flatMap(i => i.tags))).sort();
-    allTags.forEach(function(tag){
-      const id = "tg-" + tag.replace(/\s+/g,'-');
-      const chip = document.createElement("label");
-      chip.className = "pf-chip";
-      chip.innerHTML = '<input type="checkbox" value="'+ tag +'" id="'+ id +'" aria-label="'+ tag +'"><span>'+ tag +'</span>';
-      tagsWrap.appendChild(chip);
-    });
-
-    function applyFilters(pushState){
-      if (pushState === void 0) pushState = false;
-      const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
-      const q = byText(searchInput ? searchInput.value : "");
-      let visible = 0;
-      items.forEach(function(i){
-        const matchTags = active.every(tag => i.tags.includes(tag));
-        const matchText = !q || i.title.includes(q) || i.caption.includes(q) || i.tags.join(" ").includes(q);
-        const show = matchTags && matchText;
-        i.el.classList.toggle("pf-hide", !show);
-        if (show) visible++;
-      });
-      if (countEl) countEl.textContent = visible + " result" + (visible===1?"":"s");
-      if (pushState) updateHash(active, searchInput ? searchInput.value : "");
-    }
-
-    if (tagsWrap) {
-      tagsWrap.addEventListener("change", function(e){
-        const cb = e.target.closest('input[type=checkbox]');
-        if (cb) {
-          const lab = cb.closest('.pf-chip');
-          if (lab) lab.classList.toggle('active', cb.checked);
-        }
-        applyFilters(true);
-      });
-    }
-
-    if (searchInput) searchInput.addEventListener("input", function(){ applyFilters(true); });
-
-    if (clearBtn) clearBtn.addEventListener("click", function(){
-      $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(function(cb){
-        cb.checked = false;
-        const lab = cb.closest('.pf-chip');
-        if (lab) lab.classList.remove('active');
-      });
-      if (searchInput) searchInput.value = "";
-      applyFilters(true);
-    });
-
-    setFromParams(); applyFilters(false);
-
-    window.addEventListener("hashchange", function(){
-      if ((location.hash||"").startsWith("#gallery")) {
-        setFromParams(); applyFilters(false);
-      }
-    });
-
-    wireTilt();
-
-    grid.addEventListener("click", function(e){
-      const card = e.target.closest(".pf-item");
-      if (card) openModal(card);
-    });
-    if (mClose) mClose.addEventListener("click", closeModal);
-    if (modal) modal.addEventListener("click", (e) => {
-      if (!e.target.closest(".inner")) closeModal();
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
-    });
-  })();
+  document.addEventListener("DOMContentLoaded", init);
 })();
