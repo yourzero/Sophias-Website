@@ -1,5 +1,3 @@
-
-
 <script>
 /* gallery-script.js */
 ;(function () {
@@ -18,7 +16,7 @@
   // Single parseTags
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
-  /* Read JSON from <script id="pf-data" type="application/json">…</script> */
+  /* Read JSON from an element with id="pf-data" and type application/json */
   function readData() {
     const dataScript = document.getElementById("pf-data");
     if (!dataScript) {

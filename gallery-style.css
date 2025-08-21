@@ -1,5 +1,5 @@
 /* gallery-style.css */
-/* ==== THEME / LAYOUT ==== */
+/* ===== THEME / LAYOUT ===== */
 .pf-wrap {
   --gap: 1.1rem;
   --radius: 16px;
@@ -11,31 +11,44 @@
 
 /* Controls box */
 .pf-controls {
-  position: sticky; top: 0; z-index: 50;
-  display:flex; flex-direction:column; gap:.65rem;
-  padding:.9rem; margin: 0 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: .65rem;
+  padding: .9rem;
+   width: 100%;
+  max-width: 600px;  /* instead of hard width */
+  margin: 0 auto 1rem;
+  
   background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(250,252,255,.88));
   border: 1px solid rgba(15,23,42,.08);
   border-radius: 14px;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 20px rgba(15,23,42,.08);
 }
+
 .pf-controls-row { display:flex; flex-wrap:wrap; gap:.5rem .55rem; align-items:center }
 .pf-divider {
   height:1px; background: linear-gradient(90deg, transparent, rgba(15,23,42,.1), transparent);
   margin:.2rem 0;
 }
-/* Equal-width tag chips per row */
+
+/* ===== EVEN COLUMNS FOR TAG CHIPS ===== */
 .pf-tags {
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, 1fr);  /* ← change 4 to your desired columns */
   gap:.45rem;
   width:100%;
 }
+@media (max-width: 900px){ .pf-tags { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px){ .pf-tags { grid-template-columns: repeat(2, 1fr); } }
+
 .pf-error { margin:.4rem 0; padding:.6rem .8rem; border-radius:10px; background:#fff3cd; color:#7a5a00; border:1px solid #ffe69c; }
 .pf-count { color:var(--muted); margin-left:auto }
 
-/* ==== FILTER CHIPS ==== */
+/* ===== FILTER CHIPS ===== */
 .pf-chip{
   display:inline-flex; align-items:center; justify-content:center; gap:.35rem;
   padding:.45rem .7rem; border-radius:999px;
@@ -51,7 +64,7 @@
   color:#fff; border-color:#111; box-shadow:0 10px 22px rgba(0,0,0,.22);
 }
 
-/* ==== SEARCH & CLEAR ==== */
+/* ===== SEARCH & CLEAR ===== */
 .pf-util { gap:.6rem }
 .pf-search{
   display:flex; align-items:center; gap:.5rem;
@@ -67,13 +80,13 @@
 }
 .pf-clear:hover{ background:#f5f5f9; transform: translateY(-1px) }
 
-/* ==== GRID ==== */
+/* ===== GRID ===== */
 .pf-grid{
   display:grid; gap: var(--gap);
   grid-template-columns: repeat( auto-fit, minmax(240px, 1fr) );
 }
 
-/* ==== CARD ==== */
+/* ===== CARD ===== */
 .pf-item{
   --rx:0deg; --ry:0deg; --scale:1;
   position:relative; overflow:hidden; z-index:0;
@@ -91,7 +104,6 @@
   box-shadow: 0 20px 44px rgba(15,23,42,.18), 0 10px 22px rgba(15,23,42,.12);
   z-index:5;
 }
-/* Click press bump */
 .pf-item.pf-press{ --scale:1.6; transition-duration:.22s }
 
 /* Thumb */
@@ -115,7 +127,7 @@
 
 .pf-hide{ display:none !important }
 
-/* ==== MODAL ==== */
+/* ===== MODAL ===== */
 .pf-modal{
   position:fixed; inset:0; display:none;
   background: rgba(10,14,20,.66);
