@@ -142,7 +142,6 @@
     return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
   }
 
-  // Init
   (function init(){
     const data = readData();
     renderFromData(data);
@@ -213,10 +212,14 @@
     wireTilt();
 
     // Modal + FLIP (with press micro-interaction)
-    const modal = $("#pf-modal"), mImg = $("#pf-modal-img"), mTitle = $("#pf-modal-title"), mCap = $("#pf-modal-cap"), mClose = $("#pf-modal-close");
+    const modal = $("#pf-modal");
+    const mImg = $("#pf-modal-img");
+    const mTitle = $("#pf-modal-title");
+    const mCap = $("#pf-modal-cap");
+    const mClose = $("#pf-modal-close");
     let lastThumb = null, lastRect = null;
 
-    // Click press bump
+    // Press bump
     grid.addEventListener("mousedown", (e) => {
       const card = e.target.closest(".pf-item"); if (!card) return;
       card.classList.add("pf-press");
@@ -261,6 +264,8 @@
     });
     mClose.addEventListener("click", closeModal);
     modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal(); });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
+    });
   })();
 })();
