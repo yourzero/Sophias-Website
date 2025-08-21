@@ -1,4 +1,3 @@
-/* gallery-script.js (modal fix + overlay click + ESC + animation polish) */
 ;(function () {
   const $ = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
@@ -11,8 +10,11 @@
   const clearBtn = $("#pf-clear");
   const countEl = $("#pf-count");
   const errEl = $("#pf-error");
-
-  if (!grid) return;
+  const modal = $("#pf-modal");
+  const mImg = $("#pf-modal-img");
+  const mTitle = $("#pf-modal-title");
+  const mCap = $("#pf-modal-cap");
+  const mClose = $("#pf-modal-close");
 
   const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
@@ -53,11 +55,81 @@
     }).join("");
   }
 
+  function fly(fromRect, toRect, imgSrc, reverse, done) {
+    if (!done) done = () => {};
+    if (prefersReduced) { done(); return; }
+    const ghost = document.createElement("img");
+    ghost.src = imgSrc; ghost.alt = "";
+    Object.assign(ghost.style, {
+      position: "fixed",
+      left: fromRect.left + "px",
+      top: fromRect.top + "px",
+      width: fromRect.width + "px",
+      height: fromRect.height + "px",
+      borderRadius: "12px",
+      boxShadow: "0 10px 28px rgba(0,0,0,.25)",
+      zIndex: "100000",
+      pointerEvents: "none",
+      transition: "transform .32s cubic-bezier(.2,.7,.2,1), opacity .32s ease",
+      transformOrigin: "center center",
+      willChange: "transform, opacity"
+    });
+    document.body.appendChild(ghost);
+    const dx = (toRect.left + toRect.width/2) - (fromRect.left + fromRect.width/2);
+    const dy = (toRect.top + toRect.height/2) - (fromRect.top + fromRect.height/2);
+    const sx = toRect.width / fromRect.width;
+    const sy = toRect.height / fromRect.height;
+    const scale = Math.min(sx, sy);
+    requestAnimationFrame(() => {
+      ghost.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
+      if (reverse) ghost.style.opacity = "0.85";
+    });
+    ghost.addEventListener("transitionend", () => { ghost.remove(); done(); }, { once: true });
+  }
+
+  function viewportTargetRect(maxW, maxH) {
+    if (maxW === void 0) maxW = Math.min(window.innerWidth*0.92, 1200);
+    if (maxH === void 0) maxH = window.innerHeight*0.88;
+    const w = maxW, h = maxH;
+    return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
+  }
+
+  function openModal(fromItem) {
+    const img = fromItem.querySelector("img");
+    mImg.src = img.src; mImg.alt = img.alt || "";
+    mTitle.textContent = fromItem.getAttribute("data-title") || "";
+    mCap.textContent = fromItem.getAttribute("data-caption") || "";
+
+    const fromRect = img.getBoundingClientRect();
+    const toRect = viewportTargetRect();
+
+    fly(fromRect, toRect, img.src, false, () => {
+      modal.classList.add("is-open");
+      document.body.classList.add("pf-lock");
+      modal.setAttribute("aria-hidden", "false");
+    });
+  }
+
+  function closeModal() {
+    const wasOpen = modal.classList.contains("is-open");
+    modal.classList.remove("is-open");
+    document.body.classList.remove("pf-lock");
+    modal.setAttribute("aria-hidden", "true");
+    if (wasOpen && mImg && !prefersReduced) {
+      const target = grid.querySelector(`img[src="${mImg.src}"]`);
+      if (target) {
+        const targetRect = target.getBoundingClientRect();
+        fly(viewportTargetRect(), targetRect, mImg.src, true);
+      }
+    }
+  }
+
   function getParamsFromHash() {
     const h = location.hash || "";
     const qIndex = h.indexOf("?");
     return new URLSearchParams(qIndex >= 0 ? h.slice(qIndex+1) : "");
   }
+
   function updateHash(active, q) {
     const params = new URLSearchParams();
     if (active.length) params.set("tags", active.join(","));
@@ -66,6 +138,7 @@
     const hash = "gallery" + (params.toString() ? "?" + params.toString() : "");
     history.replaceState(null, "", base + "#" + hash);
   }
+
   function setFromParams() {
     const p = getParamsFromHash();
     const want = (p.get("tags")||"").split(",").map(s=>s.trim().toLowerCase()).filter(Boolean);
@@ -96,46 +169,6 @@
     }, true);
   }
 
-  /* FLIP-like zoom helper */
-  function fly(fromRect, toRect, imgSrc, reverse, done) {
-    if (reverse === void 0) reverse = false;
-    if (!done) done = function(){};
-    if (prefersReduced) { done(); return; }
-    const ghost = document.createElement("img");
-    ghost.src = imgSrc; ghost.alt = "";
-    Object.assign(ghost.style, {
-      position: "fixed",
-      left: fromRect.left + "px",
-      top: fromRect.top + "px",
-      width: fromRect.width + "px",
-      height: fromRect.height + "px",
-      borderRadius: "12px",
-      boxShadow: "0 10px 28px rgba(0,0,0,.25)",
-      zIndex: "100000",           /* ensure above Carrd content */
-      pointerEvents: "none",
-      transition: "transform .32s cubic-bezier(.2,.7,.2,1), opacity .28s ease",
-      transformOrigin: "center center",
-      willChange: "transform, opacity"
-    });
-    document.body.appendChild(ghost);
-    const dx = (toRect.left + toRect.width/2) - (fromRect.left + fromRect.width/2);
-    const dy = (toRect.top + toRect.height/2) - (fromRect.top + fromRect.height/2);
-    const sx = toRect.width / fromRect.width;
-    const sy = toRect.height / fromRect.height;
-    const scale = Math.min(sx, sy);
-    requestAnimationFrame(function() {
-      ghost.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
-      if (reverse) ghost.style.opacity = "0.85";
-    });
-    ghost.addEventListener("transitionend", function() { ghost.remove(); done(); }, { once: true });
-  }
-  function viewportTargetRect(maxW, maxH) {
-    if (maxW === void 0) maxW = Math.min(window.innerWidth*0.92, 1200);
-    if (maxH === void 0) maxH = window.innerHeight*0.88;
-    const w = maxW, h = maxH;
-    return { left: (window.innerWidth - w)/2, top: (window.innerHeight - h)/2, width: w, height: h };
-  }
-
   (function init(){
     const data = readData();
     renderFromData(data);
@@ -156,7 +189,7 @@
       }
     });
 
-    const allTags = Array.from(new Set(items.flatMap(function(i){ return i.tags; }))).sort(function(a,b){return a.localeCompare(b);});
+    const allTags = Array.from(new Set(items.flatMap(i => i.tags))).sort();
     allTags.forEach(function(tag){
       const id = "tg-" + tag.replace(/\s+/g,'-');
       const chip = document.createElement("label");
@@ -167,18 +200,18 @@
 
     function applyFilters(pushState){
       if (pushState === void 0) pushState = false;
-      const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(function(cb){ return cb.value; });
+      const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
       const q = byText(searchInput ? searchInput.value : "");
-      var visible = 0;
+      let visible = 0;
       items.forEach(function(i){
-        const matchTags = active.every(function(tag){ return i.tags.includes(tag); });
+        const matchTags = active.every(tag => i.tags.includes(tag));
         const matchText = !q || i.title.includes(q) || i.caption.includes(q) || i.tags.join(" ").includes(q);
         const show = matchTags && matchText;
         i.el.classList.toggle("pf-hide", !show);
         if (show) visible++;
       });
       if (countEl) countEl.textContent = visible + " result" + (visible===1?"":"s");
-      if (pushState) updateHash(active, (searchInput ? searchInput.value : ""));
+      if (pushState) updateHash(active, searchInput ? searchInput.value : "");
     }
 
     if (tagsWrap) {
@@ -191,7 +224,9 @@
         applyFilters(true);
       });
     }
+
     if (searchInput) searchInput.addEventListener("input", function(){ applyFilters(true); });
+
     if (clearBtn) clearBtn.addEventListener("click", function(){
       $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(function(cb){
         cb.checked = false;
@@ -203,67 +238,24 @@
     });
 
     setFromParams(); applyFilters(false);
+
     window.addEventListener("hashchange", function(){
-      if ((location.hash||"").startsWith("#gallery")) { setFromParams(); applyFilters(false); }
+      if ((location.hash||"").startsWith("#gallery")) {
+        setFromParams(); applyFilters(false);
+      }
     });
 
     wireTilt();
 
-    /* ===== Modal behavior (open/close robust) ===== */
-    const modal = $("#pf-modal");
-    const mImg = $("#pf-modal-img");
-    const mTitle = $("#pf-modal-title");
-    const mCap = $("#pf-modal-cap");
-    const mClose = $("#pf-modal-close");
-    let lastThumb = null, lastRect = null;
-
-    function openModal(fromItem) {
-      if (!modal) return;
-      const img = fromItem.querySelector("img");
-      mImg.src = img.src; mImg.alt = img.alt || "";
-      mTitle.textContent = fromItem.getAttribute("data-title") || "";
-      mCap.textContent = fromItem.getAttribute("data-caption") || "";
-
-      lastThumb = img; lastRect = img.getBoundingClientRect();
-      const target = viewportTargetRect();
-
-      // Animate up, then show modal overlay
-      fly(lastRect, target, img.src, false, function(){
-        modal.classList.add("is-open");
-        document.body.classList.add("pf-lock");
-        modal.setAttribute("aria-hidden","false");
-      });
-    }
-
-    function closeModal() {
-      if (!modal) return;
-      const wasOpen = modal.classList.contains("is-open");
-      modal.classList.remove("is-open");
-      document.body.classList.remove("pf-lock");
-      modal.setAttribute("aria-hidden","true");
-      // Animate back down after overlay is hidden
-      if (wasOpen && lastThumb && lastRect && !prefersReduced) {
-        const target = lastThumb.getBoundingClientRect();
-        fly(viewportTargetRect(), target, mImg.src, true, function(){});
-      }
-    }
-
-    // Open on card click
     grid.addEventListener("click", function(e){
       const card = e.target.closest(".pf-item");
       if (card) openModal(card);
     });
-
-    // X button
     if (mClose) mClose.addEventListener("click", closeModal);
-
-    // Click outside inner to close (more robust than target===modal)
-    if (modal) modal.addEventListener("click", function(e){
+    if (modal) modal.addEventListener("click", (e) => {
       if (!e.target.closest(".inner")) closeModal();
     });
-
-    // ESC on document (some templates eat window events)
-    document.addEventListener("keydown", function(e){
+    document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeModal();
     });
   })();
