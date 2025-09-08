@@ -1,7 +1,8 @@
-;(function () {
-  const $ = (sel, ctx=document) => ctx.querySelector(sel);
-  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
-  const byText = (t) => (t||"").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g,"");
+
+; (function () {
+  const $ = (sel, ctx = document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+  const byText = (t) => (t || "").toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "");
 
   const grid = $("#pf-grid");
   const tagsWrap = $("#pf-tags");
@@ -23,19 +24,19 @@
   // Compute transform-origin on the modal .inner so that scaling centers on the modal image
   function setInnerOriginToImage(innerEl, imgEl) {
     const innerRect = innerEl.getBoundingClientRect();
-    const imgRect   = imgEl.getBoundingClientRect();
+    const imgRect = imgEl.getBoundingClientRect();
     const ox = imgRect.left - innerRect.left;
-    const oy = imgRect.top  - innerRect.top;
+    const oy = imgRect.top - innerRect.top;
     innerEl.style.transformOrigin = ox + "px " + oy + "px";
     return { innerRect, imgRect };
   }
 
   // Given a thumbnail rect and the modal image rect, compute the transform that makes the modal image overlap the thumb
   function computeStartTransform(fromRect, toImgRect) {
-    const sx = fromRect.width  / toImgRect.width;
+    const sx = fromRect.width / toImgRect.width;
     const sy = fromRect.height / toImgRect.height;
     const tx = fromRect.left - toImgRect.left;
-    const ty = fromRect.top  - toImgRect.top;
+    const ty = fromRect.top - toImgRect.top;
     return { sx, sy, tx, ty };
   }
 
@@ -43,7 +44,7 @@
     el.style.transition = value;
   }
 
-  const parseTags = (el) => (el.getAttribute("data-tags")||"").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+  const parseTags = (el) => (el.getAttribute("data-tags") || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
   function readData() {
     const dataScript = document.getElementById("pf-data");
@@ -66,35 +67,33 @@
     const base = data.baseUrl || "";
     grid.innerHTML = data.items.map(item => {
       const src = (item.src || "").startsWith("http") ? item.src : (base + (item.src || ""));
-      const alt = (item.alt || "").replace(/"/g,'&quot;');
+      const alt = (item.alt || "").replace(/"/g, '&quot;');
       const title = item.title || "";
       const caption = item.caption || "";
       const tags = Array.isArray(item.tags) ? item.tags : [];
       const dataTags = tags.join(", ");
-      const titleEsc = title.replace(/"/g,'&quot;');
-      const captionEsc = caption.replace(/"/g,'&quot;');
+      const titleEsc = title.replace(/"/g, '&quot;');
+      const captionEsc = caption.replace(/"/g, '&quot;');
       return (
         '<figure class="pf-item" data-tags="' + dataTags + '" data-title="' + titleEsc + '" data-caption="' + captionEsc + '">' +
-          '<div class="thumb"><img src="' + src + '" alt="' + alt + '" loading="lazy" /></div>' +
-          '<figcaption><strong>' + title + '</strong><small class="pf-card-tags"></small></figcaption>' +
+        '<div class="thumb"><img src="' + src + '" alt="' + alt + '" loading="lazy" /></div>' +
+        '<figcaption><strong>' + title + '</strong><small class="pf-card-tags"></small></figcaption>' +
         '</figure>'
       );
     }).join("");
   }
 
-  
   function openModal(fromItem) {
     if (__pf_animating) return;
     const thumbImg = fromItem.querySelector("img");
     __pf_lastThumb = thumbImg;
 
     // Populate modal content
-    mImg.src = thumbImg.src; 
+    mImg.src = thumbImg.src;
     mImg.alt = thumbImg.alt || "";
     mTitle.textContent = fromItem.getAttribute("data-title") || "";
-    mCap.textContent   = fromItem.getAttribute("data-caption") || "";
+    mCap.textContent = fromItem.getAttribute("data-caption") || "";
 
-    
     // Ensure modal image is ready for accurate rects
     const proceed = () => {
       const inner = modal.querySelector(".inner");
@@ -114,7 +113,7 @@
       withTransition(inner, "none");
       inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
       // force reflow
-      inner.offsetWidth; 
+      inner.offsetWidth;
       withTransition(inner, "transform .36s cubic-bezier(.2,.7,.2,1)");
       inner.style.transform = "none";
 
@@ -132,9 +131,9 @@
       proceed();
     }
     return;
-// Instant open for reduced motion
+    // Instant open for reduced motion
     if (prefersReduced) {
-      modal.classList.add("is-open"); 
+      modal.classList.add("is-open");
       document.body.classList.add("pf-lock");
       modal.setAttribute("aria-hidden", "false");
       return;
@@ -157,7 +156,7 @@
     withTransition(inner, "none");
     inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
     // force reflow
-    inner.offsetWidth; 
+    inner.offsetWidth;
     withTransition(inner, "transform .36s cubic-bezier(.2,.7,.2,1)");
     inner.style.transform = "none";
 
@@ -169,8 +168,6 @@
     inner.addEventListener("transitionend", end, { once: true });
   }
 
-
-  
   function closeModal() {
     if (__pf_animating) return;
 
@@ -183,7 +180,7 @@
     }
 
     const inner = modal.querySelector(".inner");
-    const thumb = __pf_lastThumb || (grid ? grid.querySelector('img[src="' + (mImg.src||"") + '"]') : null);
+    const thumb = __pf_lastThumb || (grid ? grid.querySelector('img[src="' + (mImg.src || "") + '"]') : null);
 
     if (!thumb) {
       // Fallback
@@ -235,12 +232,11 @@
     inner.addEventListener("transitionend", end, { once: true });
   }
 
-
   function applyFilters(items) {
     const active = $$(".pf-tags input[type=checkbox]:checked", tagsWrap).map(cb => cb.value);
     const q = byText(searchInput ? searchInput.value : "");
     let visible = 0;
-    items.forEach(function(i){
+    items.forEach(function (i) {
       const matchTags = active.every(tag => i.tags.includes(tag));
       const matchText = !q || i.title.includes(q) || i.caption.includes(q) || i.tags.join(" ").includes(q);
       const show = matchTags && matchText;
@@ -272,10 +268,10 @@
 
     const allTags = Array.from(new Set(items.flatMap(i => i.tags))).sort();
     allTags.forEach(tag => {
-      const id = "tg-" + tag.replace(/\s+/g,'-');
+      const id = "tg-" + tag.replace(/\s+/g, '-');
       const chip = document.createElement("label");
       chip.className = "pf-chip";
-      chip.innerHTML = '<input type="checkbox" value="'+ tag +'" id="'+ id +'" aria-label="'+ tag +'"><span>'+ tag +'</span>';
+      chip.innerHTML = '<input type="checkbox" value="' + tag + '" id="' + id + '" aria-label="' + tag + '"><span>' + tag + '</span>';
       tagsWrap.appendChild(chip);
     });
 
