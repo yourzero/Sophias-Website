@@ -1,4 +1,4 @@
-<script>
+
 ; (function () {
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
@@ -19,21 +19,22 @@
   // Motion settings & state
   const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let __pf_animating = false;
+  let __pf_lastThumb = null;
 
-  function getRect(el) { return el.getBoundingClientRect(); }
-
+  // Compute transform-origin on the modal .inner so that scaling centers on the modal image
   function setInnerOriginToImage(innerEl, imgEl) {
-    const innerRect = getRect(innerEl);
-    const imgRect = getRect(imgEl);
+    const innerRect = innerEl.getBoundingClientRect();
+    const imgRect = imgEl.getBoundingClientRect();
     const ox = imgRect.left - innerRect.left;
     const oy = imgRect.top - innerRect.top;
-    innerEl.style.transformOrigin = `${ox}px ${oy}px`;
-    return { innerRect, imgRect, ox, oy };
+    innerEl.style.transformOrigin = ox + "px " + oy + "px";
+    return { innerRect, imgRect };
   }
 
+  // Given a thumbnail rect and the modal image rect, compute the transform that makes the modal image overlap the thumb
   function computeStartTransform(fromRect, toImgRect) {
-    const sx = fromRect.width / Math.max(1, toImgRect.width);
-    const sy = fromRect.height / Math.max(1, toImgRect.height);
+    const sx = fromRect.width / toImgRect.width;
+    const sy = fromRect.height / toImgRect.height;
     const tx = fromRect.left - toImgRect.left;
     const ty = fromRect.top - toImgRect.top;
     return { sx, sy, tx, ty };
@@ -45,21 +46,15 @@
 
   const parseTags = (el) => (el.getAttribute("data-tags") || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
+  
   function readItemsData() {
     const itemsScript = document.getElementById("pf-items") || document.getElementById("pf-items-data") || document.getElementById("pf-data");
-
     if (!itemsScript) {
       if (errEl) { errEl.hidden = false; errEl.textContent = "⚠️ Missing items JSON (<script id='pf-items'>)."; }
       return { baseUrl: "", items: [] };
     }
     try {
       const data = JSON.parse(itemsScript.textContent || "{}");
-
-          console.info("images data:");
-    console.info(data);
-
-
-
       const items = Array.isArray(data.items) ? data.items : [];
       const baseUrl = (typeof data.baseUrl === "string") ? data.baseUrl : "";
       return { baseUrl, items };
@@ -70,31 +65,32 @@
   }
 
   function readTagGroupsData() {
-    const tgScript = document.getElementById("pf-tag-groups") || document.getElementById("pf-tags-data");
-
+    const tgScript = document.getElementById("pf-tag-groups") || document.getElementById("pf-tags-data") || document.getElementById("pf-data");
     if (!tgScript) return { groups: [] };
     try {
       const data = JSON.parse(tgScript.textContent || "{}");
-
-         console.info("tag groups data:");
-    console.info(data.tagGroups);
-
-      const rawGroups = Array.isArray(data.tagGroups) ? data.tagGroups : [];
+      const rawGroups = Array.isArray(data.groups) ? data.groups : [];
       const groups = rawGroups.map(g => ({
         id: g.id,
         tags: Array.isArray(g.tags) ? g.tags : [],
         multi: (g["multi-select"] !== false) // default true
       }));
-
-          console.info("tag groups data:");
-    console.info(rawGroups);
-
-
-
       return { groups };
     } catch (e) {
       console.error("[pf-gallery] Invalid JSON in tag groups script.", e);
       return { groups: [] };
+    }
+  }
+
+      return { items: [] };
+    }
+    try {
+      const data = JSON.parse(dataScript.textContent || "{}");
+      if (!Array.isArray(data.items)) return { baseUrl: data.baseUrl || "", items: [] };
+      return { baseUrl: data.baseUrl || "", items: data.items, tags: data.tags || {} };
+    } catch (e) {
+      if (errEl) { errEl.hidden = false; errEl.textContent = "⚠️ Invalid JSON in #pf-data."; }
+      return { items: [] };
     }
   }
 
@@ -117,19 +113,12 @@
         '</figure>'
       );
     }).join("");
-
-    // fill per-card tag badges
-    $$(".pf-item", grid).forEach(el => {
-      const tags = parseTags(el);
-      const box = el.querySelector(".pf-card-tags");
-      if (box && tags.length) box.innerHTML = tags.map(t => `<span class="pf-card-tag">${t}</span>`).join("");
-    });
   }
 
   function openModal(fromItem) {
     if (__pf_animating) return;
     const thumbImg = fromItem.querySelector("img");
-    const inner = modal.querySelector(".inner");
+    __pf_lastThumb = thumbImg;
 
     // Populate modal content
     mImg.src = thumbImg.src;
@@ -137,19 +126,24 @@
     mTitle.textContent = fromItem.getAttribute("data-title") || "";
     mCap.textContent = fromItem.getAttribute("data-caption") || "";
 
+    // Ensure modal image is ready for accurate rects
     const proceed = () => {
-      // Show modal
+      const inner = modal.querySelector(".inner");
+
+      // Make modal visible so measurement is correct, but prepare FLIP start state
       modal.classList.add("is-open");
       document.body.classList.add("pf-lock");
       modal.setAttribute("aria-hidden", "false");
 
+      // Measure and set transform origin to the modal image position
       const { imgRect: toImgRect } = setInnerOriginToImage(inner, mImg);
       const fromRect = thumbImg.getBoundingClientRect();
       const { sx, sy, tx, ty } = computeStartTransform(fromRect, toImgRect);
 
+      // Set starting transform (no transition), then animate to identity
       __pf_animating = true;
       withTransition(inner, "none");
-      inner.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+      inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
       // force reflow
       inner.offsetWidth;
       withTransition(inner, "transform .36s cubic-bezier(.2,.7,.2,1)");
@@ -163,51 +157,108 @@
       inner.addEventListener("transitionend", end, { once: true });
     };
 
-    if (mImg.complete) proceed();
-    else mImg.addEventListener("load", proceed, { once: true });
+    if (!mImg.complete) {
+      mImg.addEventListener("load", proceed, { once: true });
+    } else {
+      proceed();
+    }
+    return;
+    // Instant open for reduced motion
+    if (prefersReduced) {
+      modal.classList.add("is-open");
+      document.body.classList.add("pf-lock");
+      modal.setAttribute("aria-hidden", "false");
+      return;
+    }
+
+    const inner = modal.querySelector(".inner");
+
+    // Make modal visible so measurement is correct, but prepare FLIP start state
+    modal.classList.add("is-open");
+    document.body.classList.add("pf-lock");
+    modal.setAttribute("aria-hidden", "false");
+
+    // Measure and set transform origin to the modal image position
+    const { imgRect: toImgRect } = setInnerOriginToImage(inner, mImg);
+    const fromRect = thumbImg.getBoundingClientRect();
+    const { sx, sy, tx, ty } = computeStartTransform(fromRect, toImgRect);
+
+    // Set starting transform (no transition), then animate to identity
+    __pf_animating = true;
+    withTransition(inner, "none");
+    inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
+    // force reflow
+    inner.offsetWidth;
+    withTransition(inner, "transform .36s cubic-bezier(.2,.7,.2,1)");
+    inner.style.transform = "none";
+
+    function end() {
+      inner.removeEventListener("transitionend", end);
+      withTransition(inner, "");
+      __pf_animating = false;
+    }
+    inner.addEventListener("transitionend", end, { once: true });
   }
 
   function closeModal() {
     if (__pf_animating) return;
-    const inner = modal.querySelector(".inner");
-    const thumb = document.querySelector(".pf-item img[src='" + CSS.escape(mImg.src) + "']");
-    if (!thumb) {
-      // Fade-close
+
+    // Instant close for reduced motion
+    if (prefersReduced) {
       modal.classList.remove("is-open");
       document.body.classList.remove("pf-lock");
       modal.setAttribute("aria-hidden", "true");
       return;
     }
 
+    const inner = modal.querySelector(".inner");
+    const thumb = __pf_lastThumb || (grid ? grid.querySelector('img[src="' + (mImg.src || "") + '"]') : null);
+
+    if (!thumb) {
+      // Fallback
+      modal.classList.remove("is-open");
+      document.body.classList.remove("pf-lock");
+      modal.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    // Measure rects and transform-origin
     const { imgRect: toImgRect } = setInnerOriginToImage(inner, mImg);
     const fromRect = thumb.getBoundingClientRect();
     const { sx, sy, tx, ty } = computeStartTransform(fromRect, toImgRect);
 
     __pf_animating = true;
     withTransition(inner, "transform .32s cubic-bezier(.2,.7,.2,1)");
-    inner.style.transform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
-
-    function afterFade() {
-      modal.classList.remove("is-open");
-      document.body.classList.remove("pf-lock");
-      modal.setAttribute("aria-hidden", "true");
-    }
+    inner.style.transform = "translate(" + tx + "px, " + ty + "px) scale(" + sx + ", " + sy + ")";
 
     function end() {
       inner.removeEventListener("transitionend", end);
       withTransition(inner, "");
 
-      // Fade while keeping collapsed transform until fade completes
-      modal.classList.add("fade-out");
+      // Begin overlay fade; keep the inner at the collapsed transform until fade completes,
+      // to prevent a visible "expand while fading" ghost effect.
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("pf-lock");
+
+      let cleaned = false;
+      const afterFade = () => {
+        if (cleaned) return;
+        cleaned = true;
+        inner.style.transform = "none";
+        __pf_animating = false;
+      };
+
+      // Prefer to wait for the modal's opacity transition to finish
       const onFade = (ev) => {
         if (ev.target === modal && ev.propertyName === "opacity") {
           modal.removeEventListener("transitionend", onFade);
           afterFade();
-          modal.classList.remove("fade-out");
         }
       };
       modal.addEventListener("transitionend", onFade);
 
+      // Fallback: just in case the browser doesn't fire transitionend
       setTimeout(afterFade, 400);
     }
     inner.addEventListener("transitionend", end, { once: true });
@@ -233,9 +284,6 @@
 
     const tagsData = readTagGroupsData();
 
-    console.info("tagsData:");
-    console.info(tagsData);
-
     const items = $$(".pf-item", grid).map(el => {
       return {
         el,
@@ -245,11 +293,16 @@
       };
     });
 
-    // Build tag chips from tagsData.groups if provided; otherwise derive from items
+    items.forEach(i => {
+      const box = i.el.querySelector(".pf-card-tags");
+      if (box && i.tags.length) {
+        box.innerHTML = i.tags.map(t => `<span class="pf-card-tag">${t}</span>`).join("");
+      }
+    });
+
+    
+    // Build tag chips from config.tags.groups if provided; otherwise derive from items
     if (tagsData && Array.isArray(tagsData.groups) && tagsData.groups.length) {
-
-      console.info("tagsArray");
-
       tagsWrap.innerHTML = "";
       const groups = [...tagsData.groups].sort((a,b) => (a.id || 0) - (b.id || 0));
       groups.forEach((g, idx) => {
@@ -273,7 +326,6 @@
         tagsWrap.appendChild(groupBox);
 
         if (idx < groups.length - 1) {
-          console.info("hr");
           const hr = document.createElement("hr");
           hr.className = "pf-tags-sep";
           hr.style.gridColumn = "1 / -1";
@@ -293,27 +345,7 @@
         tagsWrap.appendChild(chip);
       });
     }
-
-    // Determine allowed tags from groups (for logging only)
-    let allowedTagSet = null;
-    if (tagsData && Array.isArray(tagsData.groups)) {
-      allowedTagSet = new Set(tagsData.groups.flatMap(g => Array.isArray(g.tags) ? g.tags : []));
-    }
-
-    // Log any tags used by items that are not listed in tags->groups
-    if (allowedTagSet) {
-      items.forEach(i => {
-        const unknowns = i.tags.filter(t => !allowedTagSet.has(t));
-        if (unknowns.length) {
-          console.error("[pf-gallery] Unknown tag(s) for item",
-            i.el.getAttribute("data-title") || i.el.querySelector("img")?.getAttribute("src"),
-            "=>", unknowns.join(", ")
-          );
-        }
-      });
-    }
-
-    // Tags change handler (supports single-select groups)
+    
     tagsWrap.addEventListener("change", e => {
       const cb = e.target.closest('input[type=checkbox]');
       if (cb) {
@@ -335,20 +367,24 @@
       }
       applyFilters(items);
     });
+          if (cb) {
+        const lab = cb.closest('.pf-chip');
+        if (lab) lab.classList.toggle('active', cb.checked);
+      }
+      applyFilters(items);
+    });
 
-    if (searchInput) searchInput.addEventListener("input", () => applyFilters(items));
+    searchInput.addEventListener("input", () => applyFilters(items));
 
-    if (clearBtn) {
-      clearBtn.addEventListener("click", () => {
-        $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
-          cb.checked = false;
-          const lab = cb.closest('.pf-chip');
-          if (lab) lab.classList.remove('active');
-        });
-        if (searchInput) searchInput.value = "";
-        applyFilters(items);
+    clearBtn.addEventListener("click", () => {
+      $$(".pf-tags input[type=checkbox]", tagsWrap).forEach(cb => {
+        cb.checked = false;
+        const lab = cb.closest('.pf-chip');
+        if (lab) lab.classList.remove('active');
       });
-    }
+      searchInput.value = "";
+      applyFilters(items);
+    });
 
     grid.addEventListener("click", e => {
       const card = e.target.closest(".pf-item");
@@ -364,4 +400,3 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-</script>

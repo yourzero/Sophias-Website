@@ -1,4 +1,4 @@
-
+<style>
 
 /* gallery-style.css — coordinated with page bg #E3DEFA
 - Search header: pastel yellow
@@ -78,13 +78,21 @@ padding: .8rem .9rem;
 
 /* ===== TAGS LAYOUT (EVEN COLUMNS) ===== */
 .pf-tags {
-display:grid;
-grid-template-columns: repeat(4, 1fr); /* desktop */
-gap:.45rem;
-width:100%;
+ display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* horizontal centering */
+  gap: .45rem;
 }
-@media (max-width: 900px){ .pf-tags { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 640px){ .pf-tags { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) {
+  .pf-tags {
+    justify-content: center;
+  }
+}
+@media (max-width: 640px) {
+  .pf-tags {
+    justify-content: center;
+  }
+}
 
 .pf-error {
 margin:.6rem 0; padding:.6rem .8rem; border-radius:10px;
@@ -292,3 +300,4 @@ body.pf-lock{ overflow:hidden }
 .pf-search input{ min-width: 11rem }
 }
 
+</style>

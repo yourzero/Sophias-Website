@@ -1,6 +1,3 @@
-!!! DO NOT USE - see gallery-config-images and -tags
-
-
 {
   "baseUrl": "",
   "tags": {
@@ -46,8 +43,9 @@
       "title": "Basic Design",
       "caption": "basic design design",
       "tags": [
-        "basic design",
-        "design"
+        "basic",
+        "design",
+        "headshot"
       ]
     },
     {
@@ -56,7 +54,8 @@
       "title": "Basic Ref",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "basic",
+        "reference sheet"
       ]
     },
     {
@@ -65,7 +64,8 @@
       "title": "Basic Ref#1",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "basic",
+        "reference sheet"
       ]
     },
     {
@@ -74,7 +74,8 @@
       "title": "Basic Ref#2",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "basic",
+        "reference sheet"
       ]
     },
     {
@@ -83,7 +84,8 @@
       "title": "Basic Ref#3",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "basic",
+        "reference sheet"
       ]
     },
     {
@@ -92,7 +94,8 @@
       "title": "Basic Ref#4",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "basic",
+        "reference sheet"
       ]
     },
     {
@@ -101,7 +104,8 @@
       "title": "Basic Ref#5",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "basic",
+        "reference sheet"
       ]
     },
     {
@@ -110,7 +114,7 @@
       "title": "Basic Ref#6",
       "caption": "basic ref",
       "tags": [
-        "basic ref"
+        "TO DELETE"
       ]
     },
     {
@@ -120,8 +124,9 @@
       "caption": "bust cell shading lineless",
       "tags": [
         "bust",
+        "lineless",
         "cell shading",
-        "lineless"
+        "multiple characters"
       ]
     },
     {
@@ -131,7 +136,8 @@
       "caption": "bust simple shading",
       "tags": [
         "bust",
-        "simple shading"
+        "cell shading",
+        "chibi"
       ]
     },
     {
@@ -170,8 +176,9 @@
       "title": "Chibi Cell Shading#1",
       "caption": "cell shading chibi",
       "tags": [
+        "chibi",
         "cell shading",
-        "chibi"
+        "multiple characters"
       ]
     },
     {
@@ -180,8 +187,9 @@
       "title": "Chibi Cell Shading#2",
       "caption": "cell shading chibi",
       "tags": [
+        "chibi",
         "cell shading",
-        "chibi"
+        "multiple characters"
       ]
     },
     {
@@ -190,8 +198,9 @@
       "title": "Chibi Cell Shading",
       "caption": "cell shading chibi",
       "tags": [
-        "cell shading",
-        "chibi"
+        "bust",
+        "chibi",
+        "simple shading"
       ]
     },
     {
@@ -200,8 +209,9 @@
       "title": "Chibi Cell Shading",
       "caption": "cell shading chibi",
       "tags": [
+        "chibi",
         "cell shading",
-        "chibi"
+        "multiple characters"
       ]
     },
     {
@@ -210,8 +220,8 @@
       "title": "Chibi Cell Shading",
       "caption": "cell shading chibi",
       "tags": [
-        "cell shading",
-        "chibi"
+        "chibi",
+        "cell shading"
       ]
     },
     {
@@ -221,7 +231,8 @@
       "caption": "chibi detailed shading",
       "tags": [
         "chibi",
-        "detailed shading"
+        "detailed shading",
+        "multiple characters"
       ]
     },
     {
@@ -231,7 +242,7 @@
       "caption": "chibi detailed shading",
       "tags": [
         "chibi",
-        "detailed shading"
+        "cell shading"
       ]
     },
     {
@@ -251,7 +262,8 @@
       "caption": "chibi detailed shading",
       "tags": [
         "chibi",
-        "detailed shading"
+        "detailed shading",
+        "multiple characters"
       ]
     },
     {
@@ -261,7 +273,7 @@
       "caption": "chibi detailed shading",
       "tags": [
         "chibi",
-        "detailed shading"
+        "cell shading"
       ]
     },
     {
@@ -271,7 +283,7 @@
       "caption": "chibi painted",
       "tags": [
         "chibi",
-        "painted"
+        "painted shading"
       ]
     },
     {
@@ -281,7 +293,8 @@
       "caption": "chibi unshaded",
       "tags": [
         "chibi",
-        "unshaded"
+        "unshaded",
+        "multiple characters"
       ]
     },
     {
@@ -300,8 +313,7 @@
       "title": "Chibi Unshaded",
       "caption": "chibi unshaded",
       "tags": [
-        "chibi",
-        "unshaded"
+        "TO DELETE"
       ]
     },
     {
@@ -310,8 +322,11 @@
       "title": "Design Ref Sheet#1",
       "caption": "design ref sheet",
       "tags": [
-        "design",
-        "ref sheet"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "basic",
+        "character design"
       ]
     },
     {
@@ -320,8 +335,11 @@
       "title": "Design Ref Sheet#2",
       "caption": "design ref sheet",
       "tags": [
-        "design",
-        "ref sheet"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "basic",
+        "character design"
       ]
     },
     {
@@ -330,8 +348,12 @@
       "title": "Design Ref Sheet",
       "caption": "design ref sheet",
       "tags": [
-        "design",
-        "ref sheet"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "complex",
+        "multiple characters",
+        "character design"
       ]
     },
     {
@@ -340,8 +362,10 @@
       "title": "Design Ref Sheet",
       "caption": "design ref sheet",
       "tags": [
-        "design",
-        "ref sheet"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "character design"
       ]
     },
     {
@@ -350,7 +374,7 @@
       "title": "Design Simple Shading",
       "caption": "design simple shading",
       "tags": [
-        "design",
+        "graphic design",
         "simple shading"
       ]
     },
@@ -360,8 +384,11 @@
       "title": "Design Unshaded#1",
       "caption": "design unshaded",
       "tags": [
-        "design",
-        "unshaded"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "basic",
+        "character design"
       ]
     },
     {
@@ -370,8 +397,10 @@
       "title": "Design Unshaded#2",
       "caption": "design unshaded",
       "tags": [
-        "design",
-        "unshaded"
+        "fullbody",
+        "unshaded",
+        "multiple characters",
+        "character design"
       ]
     },
     {
@@ -380,8 +409,10 @@
       "title": "Design Unshaded#3",
       "caption": "design unshaded",
       "tags": [
-        "design",
-        "unshaded"
+        "fullbody",
+        "unshaded",
+        "multiple characters",
+        "character design"
       ]
     },
     {
@@ -390,7 +421,7 @@
       "title": "Design Unshaded#4",
       "caption": "design unshaded",
       "tags": [
-        "design",
+        "graphic design",
         "unshaded"
       ]
     },
@@ -400,8 +431,10 @@
       "title": "Design Unshaded",
       "caption": "design unshaded",
       "tags": [
-        "design",
-        "unshaded"
+        "fullbody",
+        "unshaded",
+        "multiple characters",
+        "character design"
       ]
     },
     {
@@ -410,8 +443,10 @@
       "title": "Design Unshaded",
       "caption": "design unshaded",
       "tags": [
-        "design",
-        "unshaded"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "character design"
       ]
     },
     {
@@ -420,8 +455,7 @@
       "title": "Design Unshaded",
       "caption": "design unshaded",
       "tags": [
-        "design",
-        "unshaded"
+        "TO DELETE"
       ]
     },
     {
@@ -430,8 +464,9 @@
       "title": "Fullbody Cell Shading#1",
       "caption": "cell shading fullbody",
       "tags": [
+        "fullbody",
         "cell shading",
-        "fullbody"
+        "multiple characters"
       ]
     },
     {
@@ -440,8 +475,9 @@
       "title": "Fullbody Cell Shading#2",
       "caption": "cell shading fullbody",
       "tags": [
+        "fullbody",
         "cell shading",
-        "fullbody"
+        "multiple characters"
       ]
     },
     {
@@ -450,8 +486,9 @@
       "title": "Fullbody Cell Shading",
       "caption": "cell shading fullbody",
       "tags": [
+        "fullbody",
         "cell shading",
-        "fullbody"
+        "multiple characters"
       ]
     },
     {
@@ -460,8 +497,8 @@
       "title": "Fullbody Detailed Shading#1",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "detailed shading"
       ]
     },
     {
@@ -470,8 +507,8 @@
       "title": "Fullbody Detailed Shading#2",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "detailed shading"
       ]
     },
     {
@@ -480,8 +517,9 @@
       "title": "Fullbody Detailed Shading#3",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "cell shading",
+        "multiple characters"
       ]
     },
     {
@@ -490,8 +528,8 @@
       "title": "Fullbody Detailed Shading#4",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "detailed shading"
       ]
     },
     {
@@ -500,8 +538,8 @@
       "title": "Fullbody Detailed Shading#5",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "detailed shading"
       ]
     },
     {
@@ -510,8 +548,8 @@
       "title": "Fullbody Detailed Shading",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "detailed shading"
       ]
     },
     {
@@ -520,8 +558,8 @@
       "title": "Fullbody Detailed Shading",
       "caption": "detailed shading fullbody",
       "tags": [
-        "detailed shading",
-        "fullbody"
+        "fullbody",
+        "detailed shading"
       ]
     },
     {
@@ -531,7 +569,7 @@
       "caption": "fullbody painted",
       "tags": [
         "fullbody",
-        "painted"
+        "painted shading"
       ]
     },
     {
@@ -541,7 +579,7 @@
       "caption": "fullbody painted",
       "tags": [
         "fullbody",
-        "painted"
+        "painted shading"
       ]
     },
     {
@@ -551,7 +589,8 @@
       "caption": "fullbody painted",
       "tags": [
         "fullbody",
-        "painted"
+        "painted shading",
+        "multiple characters"
       ]
     },
     {
@@ -561,7 +600,8 @@
       "caption": "fullbody simple shading",
       "tags": [
         "fullbody",
-        "simple shading"
+        "simple shading",
+        "multiple characters"
       ]
     },
     {
@@ -571,7 +611,8 @@
       "caption": "fullbody simple shading",
       "tags": [
         "fullbody",
-        "simple shading"
+        "simple shading",
+        "multiple characters"
       ]
     },
     {
@@ -611,7 +652,8 @@
       "caption": "fullbody unshaded",
       "tags": [
         "fullbody",
-        "unshaded"
+        "unshaded",
+        "multiple characters"
       ]
     },
     {
@@ -621,7 +663,8 @@
       "caption": "fullbody unshaded",
       "tags": [
         "fullbody",
-        "unshaded"
+        "unshaded",
+        "multiple characters"
       ]
     },
     {
@@ -630,8 +673,9 @@
       "title": "Headshot Animated#1",
       "caption": "animated headshot",
       "tags": [
-        "animated",
-        "headshot"
+        "headshot",
+        "unshaded",
+        "animated"
       ]
     },
     {
@@ -640,8 +684,9 @@
       "title": "Headshot Animated",
       "caption": "animated headshot",
       "tags": [
-        "animated",
-        "headshot"
+        "headshot",
+        "unshaded",
+        "animated"
       ]
     },
     {
@@ -650,8 +695,9 @@
       "title": "Headshot Animated",
       "caption": "animated headshot",
       "tags": [
-        "animated",
-        "headshot"
+        "headshot",
+        "unshaded",
+        "animated"
       ]
     },
     {
@@ -660,8 +706,9 @@
       "title": "Headshot Cell Shading",
       "caption": "cell shading headshot",
       "tags": [
+        "headshot",
         "cell shading",
-        "headshot"
+        "multiple characters"
       ]
     },
     {
@@ -670,8 +717,9 @@
       "title": "Headshot Detailed Shading",
       "caption": "detailed shading headshot",
       "tags": [
+        "headshot",
         "detailed shading",
-        "headshot"
+        "multiple characters"
       ]
     },
     {
@@ -680,8 +728,7 @@
       "title": "Headshot Detailed Shading",
       "caption": "detailed shading headshot",
       "tags": [
-        "detailed shading",
-        "headshot"
+        "TO DELETE"
       ]
     },
     {
@@ -690,7 +737,9 @@
       "title": "Painting",
       "caption": "painting",
       "tags": [
-        "painting"
+        "headshot",
+        "chibi",
+        "painted shading"
       ]
     },
     {
@@ -699,8 +748,9 @@
       "title": "Pixel Shaded",
       "caption": "pixel shaded",
       "tags": [
-        "pixel",
-        "shaded"
+        "fullbody",
+        "cell shading",
+        "pixel"
       ]
     },
     {
@@ -709,8 +759,10 @@
       "title": "Complex Ref",
       "caption": "complex ref",
       "tags": [
-        "complex",
-        "ref"
+        "fullbody",
+        "unshaded",
+        "reference sheet",
+        "complex"
       ]
     }
   ]
